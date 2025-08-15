@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Test - Alphabet ↔ Number Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .test-button {
+            background: #FF5722;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        
+        .test-button:hover {
+            background: #E64A19;
+        }
+        
+        .test-result {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 5px;
+            background: #f5f5f5;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .test-result.success {
+            border-left-color: #4CAF50;
+            background: #e8f5e8;
+        }
+        
+        .test-result.error {
+            border-left-color: #F44336;
+            background: #ffeaea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Error Handling Test Suite</h1>
+            <p>Testing comprehensive error handling and edge cases</p>
+        </header>
+
+        <main class="main-content">
+            <div class="test-section">
+                <h2>Input Validation Tests</h2>
+                <p>Test various invalid inputs and edge cases:</p>
+                
+                <button class="test-button" onclick="testEmptyInput()">Test Empty Input</button>
+                <button class="test-button" onclick="testInvalidLetters()">Test Invalid Letters</button>
+                <button class="test-button" onclick="testInvalidNumbers()">Test Invalid Numbers</button>
+                <button class="test-button" onclick="testSpecialCharacters()">Test Special Characters</button>
+                
+                <div id="input-validation-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>Rapid Submission Tests</h2>
+                <p>Test rapid submission protection:</p>
+                
+                <button class="test-button" onclick="testRapidSubmissions()">Test Rapid Submissions</button>
+                <button class="test-button" onclick="testSubmissionCooldown()">Test Cooldown Period</button>
+                
+                <div id="rapid-submission-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>Browser Compatibility Tests</h2>
+                <p>Test browser compatibility detection:</p>
+                
+                <button class="test-button" onclick="testBrowserCompatibility()">Check Browser Compatibility</button>
+                <button class="test-button" onclick="testTimerFallback()">Test Timer Fallback</button>
+                
+                <div id="browser-compatibility-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>Error Recovery Tests</h2>
+                <p>Test error recovery mechanisms:</p>
+                
+                <button class="test-button" onclick="testGlobalErrorHandling()">Test Global Error Handler</button>
+                <button class="test-button" onclick="testTimerErrorRecovery()">Test Timer Error Recovery</button>
+                
+                <div id="error-recovery-results"></div>
+            </div>
+
+            <div class="test-section">
+                <h2>Page Refresh Warning Tests</h2>
+                <p>Test page refresh warning functionality:</p>
+                
+                <button class="test-button" onclick="testPageRefreshWarning()">Test Refresh Warning</button>
+                <button class="test-button" onclick="testProgressSaving()">Test Progress Saving</button>
+                
+                <div id="page-refresh-results"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Test functions for error handling
+        
+        function addTestResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            result.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            container.appendChild(result);
+        }
+        
+        function testEmptyInput() {
+            try {
+                // Simulate empty input validation
+                const questionGenerator = new QuestionGenerator();
+                const validation = questionGenerator.validateInput('', 'letter');
+                
+                if (!validation.isValid && validation.errorMessage.includes('enter an answer')) {
+                    addTestResult('input-validation-results', 'Empty input validation: PASSED');
+                } else {
+                    addTestResult('input-validation-results', 'Empty input validation: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('input-validation-results', `Empty input test error: ${error.message}`, false);
+            }
+        }
+        
+        function testInvalidLetters() {
+            try {
+                const questionGenerator = new QuestionGenerator();
+                const testCases = ['123', '!@#', 'AB', ''];
+                let passed = 0;
+                
+                testCases.forEach(testCase => {
+                    const validation = questionGenerator.validateInput(testCase, 'letter');
+                    if (!validation.isValid) {
+                        passed++;
+                    }
+                });
+                
+                if (passed === testCases.length) {
+                    addTestResult('input-validation-results', 'Invalid letter validation: PASSED');
+                } else {
+                    addTestResult('input-validation-results', `Invalid letter validation: FAILED (${passed}/${testCases.length})`, false);
+                }
+            } catch (error) {
+                addTestResult('input-validation-results', `Invalid letter test error: ${error.message}`, false);
+            }
+        }
+        
+        function testInvalidNumbers() {
+            try {
+                const questionGenerator = new QuestionGenerator();
+                const testCases = ['abc', '0', '27', '-1', '1.5'];
+                let passed = 0;
+                
+                testCases.forEach(testCase => {
+                    const validation = questionGenerator.validateInput(testCase, 'number');
+                    if (!validation.isValid) {
+                        passed++;
+                    }
+                });
+                
+                if (passed === testCases.length) {
+                    addTestResult('input-validation-results', 'Invalid number validation: PASSED');
+                } else {
+                    addTestResult('input-validation-results', `Invalid number validation: FAILED (${passed}/${testCases.length})`, false);
+                }
+            } catch (error) {
+                addTestResult('input-validation-results', `Invalid number test error: ${error.message}`, false);
+            }
+        }
+        
+        function testSpecialCharacters() {
+            try {
+                const questionGenerator = new QuestionGenerator();
+                const testCases = ['@', '#', '$', '%', '&'];
+                let passed = 0;
+                
+                testCases.forEach(testCase => {
+                    const letterValidation = questionGenerator.validateInput(testCase, 'letter');
+                    const numberValidation = questionGenerator.validateInput(testCase, 'number');
+                    if (!letterValidation.isValid && !numberValidation.isValid) {
+                        passed++;
+                    }
+                });
+                
+                if (passed === testCases.length) {
+                    addTestResult('input-validation-results', 'Special character validation: PASSED');
+                } else {
+                    addTestResult('input-validation-results', `Special character validation: FAILED (${passed}/${testCases.length})`, false);
+                }
+            } catch (error) {
+                addTestResult('input-validation-results', `Special character test error: ${error.message}`, false);
+            }
+        }
+        
+        function testRapidSubmissions() {
+            try {
+                let blockedCount = 0;
+                const testSubmissions = 10;
+                
+                // Reset submission state
+                if (typeof submissionState !== 'undefined') {
+                    submissionState.lastSubmissionTime = 0;
+                    submissionState.submissionCount = 0;
+                    submissionState.isProcessing = false;
+                }
+                
+                // Simulate rapid submissions
+                for (let i = 0; i < testSubmissions; i++) {
+                    const allowed = handleRapidSubmissionProtection(() => {
+                        // Mock submission
+                    });
+                    
+                    if (!allowed) {
+                        blockedCount++;
+                    }
+                }
+                
+                if (blockedCount > 0) {
+                    addTestResult('rapid-submission-results', `Rapid submission protection: PASSED (blocked ${blockedCount}/${testSubmissions})`);
+                } else {
+                    addTestResult('rapid-submission-results', 'Rapid submission protection: FAILED (no submissions blocked)', false);
+                }
+            } catch (error) {
+                addTestResult('rapid-submission-results', `Rapid submission test error: ${error.message}`, false);
+            }
+        }
+        
+        function testSubmissionCooldown() {
+            try {
+                // This test would require time manipulation, so we'll just verify the function exists
+                if (typeof handleRapidSubmissionProtection === 'function') {
+                    addTestResult('rapid-submission-results', 'Submission cooldown function: PASSED');
+                } else {
+                    addTestResult('rapid-submission-results', 'Submission cooldown function: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('rapid-submission-results', `Submission cooldown test error: ${error.message}`, false);
+            }
+        }
+        
+        function testBrowserCompatibility() {
+            try {
+                const compatibility = checkBrowserCompatibility();
+                
+                if (compatibility && typeof compatibility.isSupported === 'boolean') {
+                    const message = `Browser compatibility check: PASSED (Supported: ${compatibility.isSupported}, Warnings: ${compatibility.warnings.length}, Errors: ${compatibility.errors.length})`;
+                    addTestResult('browser-compatibility-results', message);
+                } else {
+                    addTestResult('browser-compatibility-results', 'Browser compatibility check: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('browser-compatibility-results', `Browser compatibility test error: ${error.message}`, false);
+            }
+        }
+        
+        function testTimerFallback() {
+            try {
+                const timer = new Timer();
+                
+                // Test if timer can be created and has required methods
+                const requiredMethods = ['start', 'stop', 'pause', 'resume', 'getTimeRemaining'];
+                let methodsExist = true;
+                
+                requiredMethods.forEach(method => {
+                    if (typeof timer[method] !== 'function') {
+                        methodsExist = false;
+                    }
+                });
+                
+                if (methodsExist) {
+                    addTestResult('browser-compatibility-results', 'Timer fallback methods: PASSED');
+                } else {
+                    addTestResult('browser-compatibility-results', 'Timer fallback methods: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('browser-compatibility-results', `Timer fallback test error: ${error.message}`, false);
+            }
+        }
+        
+        function testGlobalErrorHandling() {
+            try {
+                // Test if global error handlers are set up
+                const hasErrorHandler = window.onerror !== null || 
+                                      (window.addEventListener && 
+                                       window.addEventListener.toString().includes('error'));
+                
+                if (hasErrorHandler || typeof setupGlobalErrorHandling === 'function') {
+                    addTestResult('error-recovery-results', 'Global error handling: PASSED');
+                } else {
+                    addTestResult('error-recovery-results', 'Global error handling: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('error-recovery-results', `Global error handling test error: ${error.message}`, false);
+            }
+        }
+        
+        function testTimerErrorRecovery() {
+            try {
+                const timer = new Timer();
+                
+                // Test if timer has error handling methods
+                if (typeof timer.handleTimerError === 'function') {
+                    addTestResult('error-recovery-results', 'Timer error recovery: PASSED');
+                } else {
+                    addTestResult('error-recovery-results', 'Timer error recovery: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('error-recovery-results', `Timer error recovery test error: ${error.message}`, false);
+            }
+        }
+        
+        function testPageRefreshWarning() {
+            try {
+                // Test if page refresh warning is set up
+                if (typeof setupPageRefreshWarning === 'function') {
+                    addTestResult('page-refresh-results', 'Page refresh warning setup: PASSED');
+                } else {
+                    addTestResult('page-refresh-results', 'Page refresh warning setup: FAILED', false);
+                }
+            } catch (error) {
+                addTestResult('page-refresh-results', `Page refresh warning test error: ${error.message}`, false);
+            }
+        }
+        
+        function testProgressSaving() {
+            try {
+                // Test localStorage availability
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('test_key', 'test_value');
+                    const retrieved = localStorage.getItem('test_key');
+                    localStorage.removeItem('test_key');
+                    
+                    if (retrieved === 'test_value') {
+                        addTestResult('page-refresh-results', 'Progress saving capability: PASSED');
+                    } else {
+                        addTestResult('page-refresh-results', 'Progress saving capability: FAILED', false);
+                    }
+                } else {
+                    addTestResult('page-refresh-results', 'Progress saving capability: NOT AVAILABLE (localStorage not supported)');
+                }
+            } catch (error) {
+                addTestResult('page-refresh-results', `Progress saving test error: ${error.message}`, false);
+            }
+        }
+        
+        // Run basic tests on page load
+        window.addEventListener('load', () => {
+            addTestResult('input-validation-results', 'Error handling test suite loaded successfully');
+        });
+    </script>
+</body>
+</html>

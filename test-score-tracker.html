@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreTracker Class Tests - Alphabet ↔ Number Quiz</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .test-controls {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .test-controls button {
+            padding: 0.75rem 1.5rem;
+            margin: 0 0.5rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .test-controls button:hover {
+            background: #0056b3;
+        }
+        
+        .test-controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .test-summary {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .test-summary.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-summary.failure {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-summary.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .demo-section {
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .demo-controls {
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .demo-controls button {
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .demo-controls button:hover {
+            background: #218838;
+        }
+        
+        .demo-output {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .stat-card h4 {
+            margin: 0 0 0.5rem 0;
+            color: #007bff;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ScoreTracker Class Unit Tests</h1>
+        <p>Comprehensive testing for score tracking and performance monitoring</p>
+    </div>
+    
+    <div class="test-controls">
+        <button id="run-tests-btn">Run All Tests</button>
+        <button id="clear-output-btn">Clear Output</button>
+        <button id="run-demo-btn">Run Interactive Demo</button>
+    </div>
+    
+    <div id="test-summary" class="test-summary" style="display: none;">
+        <div id="summary-text"></div>
+    </div>
+    
+    <div id="test-output" class="test-output">
+        Click "Run All Tests" to start testing the ScoreTracker class...
+    </div>
+    
+    <div class="demo-section">
+        <h3>Interactive ScoreTracker Demo</h3>
+        <p>Simulate a quiz session to see ScoreTracker functionality in action</p>
+        
+        <div class="demo-controls">
+            <button id="demo-start">Start New Quiz</button>
+            <button id="demo-correct">Add Correct Answer</button>
+            <button id="demo-incorrect">Add Incorrect Answer</button>
+            <button id="demo-timeout">Add Timeout</button>
+            <button id="demo-complete">Complete Quiz</button>
+            <button id="demo-reset">Reset Demo</button>
+        </div>
+        
+        <div class="stats-display" id="stats-display">
+            <div class="stat-card">
+                <h4>Score</h4>
+                <div class="value" id="score-display">0/0 (0%)</div>
+            </div>
+            <div class="stat-card">
+                <h4>Current Question</h4>
+                <div class="value" id="question-display">-</div>
+            </div>
+            <div class="stat-card">
+                <h4>Average Time</h4>
+                <div class="value" id="avg-time-display">-</div>
+            </div>
+            <div class="stat-card">
+                <h4>Quiz Status</h4>
+                <div class="value" id="status-display">Not Started</div>
+            </div>
+        </div>
+        
+        <div id="demo-output" class="demo-output">
+            Demo ready. Click "Start New Quiz" to begin...
+        </div>
+    </div>
+
+    <!-- Load the main script with ScoreTracker class -->
+    <script src="script.js"></script>
+    
+    <!-- Load the ScoreTracker tests -->
+    <script src="test-score-tracker.js"></script>
+    
+    <script>
+        // Test runner UI logic
+        let isTestsRunning = false;
+        let demoScoreTracker = null;
+        let demoQuestionCount = 0;
+        
+        // DOM elements
+        const runTestsBtn = document.getElementById('run-tests-btn');
+        const clearOutputBtn = document.getElementById('clear-output-btn');
+        const runDemoBtn = document.getElementById('run-demo-btn');
+        const testOutput = document.getElementById('test-output');
+        const testSummary = document.getElementById('test-summary');
+        const summaryText = document.getElementById('summary-text');
+        
+        // Demo elements
+        const demoOutput = document.getElementById('demo-output');
+        const scoreDisplay = document.getElementById('score-display');
+        const questionDisplay = document.getElementById('question-display');
+        const avgTimeDisplay = document.getElementById('avg-time-display');
+        const statusDisplay = document.getElementById('status-display');
+        
+        const demoStart = document.getElementById('demo-start');
+        const demoCorrect = document.getElementById('demo-correct');
+        const demoIncorrect = document.getElementById('demo-incorrect');
+        const demoTimeout = document.getElementById('demo-timeout');
+        const demoComplete = document.getElementById('demo-complete');
+        const demoReset = document.getElementById('demo-reset');
+        
+        // Override console.log to capture test output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        function captureConsoleOutput() {
+            console.log = (...args) => {
+                const message = args.join(' ');
+                testOutput.textContent += message + '\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+                originalConsoleLog(...args);
+            };
+            
+            console.error = (...args) => {
+                const message = args.join(' ');
+                testOutput.textContent += message + '\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+                originalConsoleError(...args);
+            };
+        }
+        
+        function restoreConsoleOutput() {
+            console.log = originalConsoleLog;
+            console.error = originalConsoleError;
+        }
+        
+        function logDemo(message) {
+            demoOutput.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            demoOutput.scrollTop = demoOutput.scrollHeight;
+        }
+        
+        function updateDemoDisplay() {
+            if (!demoScoreTracker) {
+                scoreDisplay.textContent = '0/0 (0%)';
+                questionDisplay.textContent = '-';
+                avgTimeDisplay.textContent = '-';
+                statusDisplay.textContent = 'Not Started';
+                return;
+            }
+            
+            const score = demoScoreTracker.getScore();
+            scoreDisplay.textContent = `${score.correct}/${score.total} (${score.percentage}%)`;
+            
+            questionDisplay.textContent = demoScoreTracker.getCurrentQuestionNumber();
+            
+            const avgTime = demoScoreTracker.getAverageTimePerQuestion();
+            avgTimeDisplay.textContent = avgTime > 0 ? `${avgTime}s` : '-';
+            
+            if (demoScoreTracker.isQuizComplete()) {
+                statusDisplay.textContent = 'Complete';
+            } else if (score.total > 0) {
+                statusDisplay.textContent = 'In Progress';
+            } else {
+                statusDisplay.textContent = 'Started';
+            }
+        }
+        
+        function updateDemoButtons() {
+            const hasTracker = demoScoreTracker !== null;
+            const isComplete = hasTracker && demoScoreTracker.isQuizComplete();
+            
+            demoStart.disabled = hasTracker && !isComplete;
+            demoCorrect.disabled = !hasTracker || isComplete;
+            demoIncorrect.disabled = !hasTracker || isComplete;
+            demoTimeout.disabled = !hasTracker || isComplete;
+            demoComplete.disabled = !hasTracker || isComplete;
+            demoReset.disabled = !hasTracker;
+        }
+        
+        function createMockQuestion(type = 'alphabet-to-number') {
+            demoQuestionCount++;
+            const isAlphaToNum = type === 'alphabet-to-number';
+            const value = isAlphaToNum ? String.fromCharCode(64 + demoQuestionCount) : demoQuestionCount;
+            const answer = isAlphaToNum ? demoQuestionCount.toString() : String.fromCharCode(64 + demoQuestionCount);
+            
+            return {
+                id: `demo_q_${demoQuestionCount}`,
+                type: type,
+                prompt: isAlphaToNum ? `What number is the letter ${value}?` : `What letter is number ${value}?`,
+                correctAnswer: answer,
+                displayValue: value.toString()
+            };
+        }
+        
+        // Event listeners
+        runTestsBtn.addEventListener('click', async () => {
+            if (isTestsRunning) return;
+            
+            isTestsRunning = true;
+            runTestsBtn.disabled = true;
+            runTestsBtn.textContent = 'Running Tests...';
+            
+            // Show running status
+            testSummary.style.display = 'block';
+            testSummary.className = 'test-summary running';
+            summaryText.textContent = 'Running ScoreTracker tests...';
+            
+            // Clear output and capture console
+            testOutput.textContent = '';
+            captureConsoleOutput();
+            
+            try {
+                const results = await runScoreTrackerTests();
+                
+                // Show results summary
+                if (results.failed === 0) {
+                    testSummary.className = 'test-summary success';
+                    summaryText.textContent = `✅ All ${results.total} tests passed!`;
+                } else {
+                    testSummary.className = 'test-summary failure';
+                    summaryText.textContent = `❌ ${results.failed} of ${results.total} tests failed.`;
+                }
+            } catch (error) {
+                testSummary.className = 'test-summary failure';
+                summaryText.textContent = `❌ Test execution failed: ${error.message}`;
+            } finally {
+                restoreConsoleOutput();
+                isTestsRunning = false;
+                runTestsBtn.disabled = false;
+                runTestsBtn.textContent = 'Run All Tests';
+            }
+        });
+        
+        clearOutputBtn.addEventListener('click', () => {
+            testOutput.textContent = 'Output cleared. Click "Run All Tests" to start testing...';
+            testSummary.style.display = 'none';
+        });
+        
+        // Demo event listeners
+        demoStart.addEventListener('click', () => {
+            demoScoreTracker = new ScoreTracker();
+            demoScoreTracker.initialize(10);
+            demoQuestionCount = 0;
+            
+            logDemo('Started new quiz session (10 questions)');
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        demoCorrect.addEventListener('click', () => {
+            if (!demoScoreTracker) return;
+            
+            const question = createMockQuestion();
+            const timeUsed = Math.floor(Math.random() * 8) + 1; // 1-8 seconds
+            
+            demoScoreTracker.recordAnswer(question, question.correctAnswer, true, timeUsed, false);
+            
+            logDemo(`Question ${question.displayValue}: Correct answer "${question.correctAnswer}" in ${timeUsed}s`);
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        demoIncorrect.addEventListener('click', () => {
+            if (!demoScoreTracker) return;
+            
+            const question = createMockQuestion();
+            const timeUsed = Math.floor(Math.random() * 9) + 2; // 2-10 seconds
+            const wrongAnswer = question.type === 'alphabet-to-number' ? '99' : 'Z';
+            
+            demoScoreTracker.recordAnswer(question, wrongAnswer, false, timeUsed, false);
+            
+            logDemo(`Question ${question.displayValue}: Wrong answer "${wrongAnswer}" (correct: "${question.correctAnswer}") in ${timeUsed}s`);
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        demoTimeout.addEventListener('click', () => {
+            if (!demoScoreTracker) return;
+            
+            const question = createMockQuestion();
+            
+            demoScoreTracker.recordAnswer(question, '', false, 10, true);
+            
+            logDemo(`Question ${question.displayValue}: Timed out (correct answer: "${question.correctAnswer}")`);
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        demoComplete.addEventListener('click', () => {
+            if (!demoScoreTracker) return;
+            
+            demoScoreTracker.completeQuiz();
+            
+            const stats = demoScoreTracker.getPerformanceStats();
+            const exportData = demoScoreTracker.exportResults();
+            
+            logDemo('Quiz completed!');
+            logDemo(`Final Score: ${stats.score.correct}/${stats.score.total} (${stats.score.percentage}%)`);
+            logDemo(`Average Time: ${stats.averageTimePerQuestion}s`);
+            
+            if (stats.fastestAnswer) {
+                logDemo(`Fastest Answer: ${stats.fastestAnswer.timeUsed}s`);
+            }
+            
+            if (stats.slowestAnswer) {
+                logDemo(`Slowest Answer: ${stats.slowestAnswer.timeUsed}s`);
+            }
+            
+            logDemo(`Time Distribution: Fast(≤3s): ${stats.timeDistribution.fast}, Medium(4-7s): ${stats.timeDistribution.medium}, Slow(>7s): ${stats.timeDistribution.slow}`);
+            
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        demoReset.addEventListener('click', () => {
+            demoScoreTracker = null;
+            demoQuestionCount = 0;
+            demoOutput.textContent = 'Demo reset. Click "Start New Quiz" to begin...\n';
+            
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        // Auto-demo
+        runDemoBtn.addEventListener('click', async () => {
+            logDemo('Running automated demo...');
+            
+            // Start quiz
+            demoScoreTracker = new ScoreTracker();
+            demoScoreTracker.initialize(5);
+            demoQuestionCount = 0;
+            updateDemoDisplay();
+            updateDemoButtons();
+            
+            // Simulate answers
+            const scenarios = [
+                { type: 'correct', delay: 500 },
+                { type: 'incorrect', delay: 800 },
+                { type: 'timeout', delay: 600 },
+                { type: 'correct', delay: 400 },
+                { type: 'incorrect', delay: 700 }
+            ];
+            
+            for (const scenario of scenarios) {
+                await new Promise(resolve => setTimeout(resolve, scenario.delay));
+                
+                const question = createMockQuestion();
+                
+                if (scenario.type === 'correct') {
+                    const timeUsed = Math.floor(Math.random() * 6) + 2;
+                    demoScoreTracker.recordAnswer(question, question.correctAnswer, true, timeUsed, false);
+                    logDemo(`Auto: Question ${question.displayValue} - Correct in ${timeUsed}s`);
+                } else if (scenario.type === 'incorrect') {
+                    const timeUsed = Math.floor(Math.random() * 8) + 3;
+                    const wrongAnswer = question.type === 'alphabet-to-number' ? '99' : 'Z';
+                    demoScoreTracker.recordAnswer(question, wrongAnswer, false, timeUsed, false);
+                    logDemo(`Auto: Question ${question.displayValue} - Incorrect in ${timeUsed}s`);
+                } else {
+                    demoScoreTracker.recordAnswer(question, '', false, 10, true);
+                    logDemo(`Auto: Question ${question.displayValue} - Timed out`);
+                }
+                
+                updateDemoDisplay();
+            }
+            
+            // Complete quiz
+            await new Promise(resolve => setTimeout(resolve, 500));
+            demoScoreTracker.completeQuiz();
+            
+            const stats = demoScoreTracker.getPerformanceStats();
+            logDemo('Auto demo completed!');
+            logDemo(`Final Score: ${stats.score.correct}/${stats.score.total} (${stats.score.percentage}%)`);
+            
+            updateDemoDisplay();
+            updateDemoButtons();
+        });
+        
+        // Initialize
+        updateDemoDisplay();
+        updateDemoButtons();
+    </script>
+</body>
+</html>

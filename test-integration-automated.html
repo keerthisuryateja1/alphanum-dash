@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Integration Tests</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #569cd6;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #1177bb;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            background: #2d2d30;
+            color: #ffcc02;
+            border: 1px solid #ffcc02;
+        }
+        
+        .status.passed {
+            background: #0f5132;
+            color: #75b798;
+            border: 1px solid #75b798;
+        }
+        
+        .status.failed {
+            background: #58151c;
+            color: #ea868f;
+            border: 1px solid #ea868f;
+        }
+        
+        .log-container {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 13px;
+            white-space: pre-wrap;
+        }
+        
+        .summary {
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .summary h3 {
+            color: #569cd6;
+            margin-top: 0;
+        }
+        
+        .metric {
+            display: inline-block;
+            margin: 10px 20px 10px 0;
+        }
+        
+        .metric-label {
+            color: #9cdcfe;
+        }
+        
+        .metric-value {
+            color: #b5cea8;
+            font-weight: bold;
+        }
+        
+        .metric-value.error {
+            color: #f48771;
+        }
+        
+        .test-results {
+            margin-top: 20px;
+        }
+        
+        .test-result {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 4px solid;
+        }
+        
+        .test-result.pass {
+            background: #0f5132;
+            border-left-color: #75b798;
+            color: #75b798;
+        }
+        
+        .test-result.fail {
+            background: #58151c;
+            border-left-color: #ea868f;
+            color: #ea868f;
+        }
+        
+        .test-name {
+            font-weight: bold;
+        }
+        
+        .test-details {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        
+        /* Hidden DOM elements for testing */
+        .hidden-test-elements {
+            position: absolute;
+            left: -9999px;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Automated Integration Tests</h1>
+        <p style="text-align: center; color: #9cdcfe;">
+            Comprehensive testing of complete game flow, timer integration, and mixed performance scenarios
+        </p>
+        
+        <div class="controls">
+            <button id="run-tests" onclick="runTests()">▶️ Run All Tests</button>
+            <button id="clear-log" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div id="summary" class="summary" style="display: none;">
+            <h3>📊 Test Results Summary</h3>
+            <div id="metrics"></div>
+            <div id="test-results" class="test-results"></div>
+        </div>
+        
+        <div class="log-container" id="log"></div>
+    </div>
+    
+    <!-- Hidden DOM elements required for testing -->
+    <div class="hidden-test-elements">
+        <div id="start-section"></div>
+        <div id="quiz-section"></div>
+        <div id="results-section"></div>
+        <span id="current-question">1</span>
+        <span id="total-questions">10</span>
+        <div id="timer">10</div>
+        <div id="timer-container"></div>
+        <div id="question">Ready to start?</div>
+        <input id="answer-input" type="text" disabled>
+        <button id="submit-btn" disabled>Submit</button>
+        <div id="feedback"></div>
+        <button id="start-btn">Start</button>
+        <button id="restart-btn">Restart</button>
+        <div id="score-summary"></div>
+        <div id="detailed-results"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="test-integration-runner.js"></script>
+    <script>
+        let testRunner = null;
+        let isRunning = false;
+        
+        // Override console.log to capture test output
+        const originalConsoleLog = console.log;
+        const logElement = document.getElementById('log');
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            
+            const message = args.join(' ');
+            logElement.textContent += message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        };
+        
+        function setStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+        }
+        
+        function updateSummary(results) {
+            const summaryElement = document.getElementById('summary');
+            const metricsElement = document.getElementById('metrics');
+            const resultsElement = document.getElementById('test-results');
+            
+            // Update metrics
+            const successRate = Math.round((results.passedTests / results.totalTests) * 100);
+            metricsElement.innerHTML = `
+                <div class="metric">
+                    <span class="metric-label">Duration:</span>
+                    <span class="metric-value">${results.duration}ms</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Tests:</span>
+                    <span class="metric-value">${results.totalTests}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Passed:</span>
+                    <span class="metric-value">${results.passedTests}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Failed:</span>
+                    <span class="metric-value ${results.failedTests > 0 ? 'error' : ''}">${results.failedTests}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Success Rate:</span>
+                    <span class="metric-value ${successRate < 100 ? 'error' : ''}">${successRate}%</span>
+                </div>
+            `;
+            
+            // Update individual test results
+            resultsElement.innerHTML = results.results.map(result => `
+                <div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                    <div class="test-name">
+                        ${result.passed ? '✅' : '❌'} ${result.testName}
+                    </div>
+                    ${result.details ? `<div class="test-details">${result.details}</div>` : ''}
+                </div>
+            `).join('');
+            
+            summaryElement.style.display = 'block';
+        }
+        
+        async function runTests() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('run-tests').disabled = true;
+            
+            try {
+                setStatus('🚀 Initializing test environment...', 'running');
+                
+                // Clear previous results
+                logElement.textContent = '';
+                document.getElementById('summary').style.display = 'none';
+                
+                // Initialize test runner
+                testRunner = new IntegrationTestRunner();
+                testRunner.verbose = true;
+                
+                console.log('='.repeat(60));
+                console.log('🧪 ALPHABET NUMBER QUIZ - INTEGRATION TESTS');
+                console.log('='.repeat(60));
+                console.log('');
+                
+                setStatus('⏳ Running integration tests...', 'running');
+                
+                // Run all tests
+                const results = await testRunner.runInBrowser();
+                
+                // Update UI with results
+                updateSummary(results);
+                
+                if (results.passed) {
+                    setStatus(`✅ All tests passed! (${results.passedTests}/${results.totalTests})`, 'passed');
+                } else {
+                    setStatus(`❌ Some tests failed (${results.passedTests}/${results.totalTests})`, 'failed');
+                }
+                
+                console.log('');
+                console.log('='.repeat(60));
+                console.log(`🏁 TEST SUITE COMPLETE - ${results.passed ? 'PASSED' : 'FAILED'}`);
+                console.log('='.repeat(60));
+                
+            } catch (error) {
+                console.log(`💥 Test suite failed with error: ${error.message}`);
+                setStatus('💥 Test suite failed with error', 'failed');
+            } finally {
+                isRunning = false;
+                document.getElementById('run-tests').disabled = false;
+            }
+        }
+        
+        function clearLog() {
+            logElement.textContent = '';
+            document.getElementById('summary').style.display = 'none';
+            document.getElementById('status').style.display = 'none';
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            console.log('🔧 Automated integration test environment ready');
+            console.log('📋 Tests available:');
+            console.log('   • Complete Game Flow Test');
+            console.log('   • Timer Integration Test');
+            console.log('   • Mixed Performance Scenarios Test');
+            console.log('');
+            console.log('Click "Run All Tests" to begin comprehensive testing...');
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        if (!isRunning) runTests();
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        clearLog();
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

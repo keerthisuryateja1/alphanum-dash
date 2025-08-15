@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizGame Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .pass { color: green; }
+        .fail { color: red; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>QuizGame Controller Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manual Test</h2>
+        <button onclick="testQuizGameCreation()">Test QuizGame Creation</button>
+        <button onclick="testGameStateManagement()">Test Game State</button>
+        <button onclick="testQuestionGeneration()">Test Question Generation</button>
+        <button onclick="testAnswerSubmission()">Test Answer Submission</button>
+        <div id="manual-test-results"></div>
+    </div>
+
+    <!-- Mock DOM elements for testing -->
+    <div style="display: none;">
+        <div id="start-section"></div>
+        <div id="quiz-section"></div>
+        <div id="results-section"></div>
+        <span id="current-question">1</span>
+        <span id="total-questions">10</span>
+        <div id="timer">10</div>
+        <div id="question">Ready to start?</div>
+        <input id="answer-input" type="text" disabled>
+        <button id="submit-btn" disabled>Submit</button>
+        <div id="feedback"></div>
+        <button id="start-btn">Start</button>
+        <button id="restart-btn">Restart</button>
+        <div id="score-summary"></div>
+        <div id="detailed-results"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        let testResults = [];
+        
+        function addTestResult(testName, passed, message = '') {
+            testResults.push({ testName, passed, message });
+            updateTestDisplay();
+        }
+        
+        function updateTestDisplay() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = testResults.map(result => 
+                `<div class="${result.passed ? 'pass' : 'fail'}">
+                    ${result.passed ? '✓' : '✗'} ${result.testName}
+                    ${result.message ? ': ' + result.message : ''}
+                </div>`
+            ).join('');
+        }
+        
+        function testQuizGameCreation() {
+            try {
+                const game = new QuizGame();
+                const hasComponents = game.questionGenerator && game.timer && 
+                                   game.scoreTracker && game.uiManager;
+                addTestResult('QuizGame Creation', hasComponents, 
+                    hasComponents ? 'All components initialized' : 'Missing components');
+            } catch (error) {
+                addTestResult('QuizGame Creation', false, error.message);
+            }
+        }
+        
+        function testGameStateManagement() {
+            try {
+                const game = new QuizGame();
+                const initialState = game.getGameState();
+                const hasCorrectInitialState = initialState.status === 'not-started' && 
+                                             initialState.currentQuestionIndex === 0;
+                addTestResult('Game State Management', hasCorrectInitialState,
+                    hasCorrectInitialState ? 'Initial state correct' : 'Initial state incorrect');
+            } catch (error) {
+                addTestResult('Game State Management', false, error.message);
+            }
+        }
+        
+        function testQuestionGeneration() {
+            try {
+                const game = new QuizGame();
+                const questions = game.generateAllQuestions();
+                const hasCorrectCount = questions.length === 10;
+                const allHaveRequiredProps = questions.every(q => 
+                    q.id && q.type && q.prompt && q.correctAnswer !== undefined);
+                
+                addTestResult('Question Generation', hasCorrectCount && allHaveRequiredProps,
+                    `Generated ${questions.length} questions, all valid: ${allHaveRequiredProps}`);
+            } catch (error) {
+                addTestResult('Question Generation', false, error.message);
+            }
+        }
+        
+        function testAnswerSubmission() {
+            try {
+                const game = new QuizGame();
+                // Test that submitAnswer doesn't crash when called
+                game.submitAnswer('A'); // Should handle gracefully when not active
+                addTestResult('Answer Submission', true, 'Method exists and handles inactive state');
+            } catch (error) {
+                addTestResult('Answer Submission', false, error.message);
+            }
+        }
+        
+        // Run basic tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testQuizGameCreation();
+                testGameStateManagement();
+                testQuestionGeneration();
+                testAnswerSubmission();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

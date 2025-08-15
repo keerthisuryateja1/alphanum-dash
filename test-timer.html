@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Class Tests - Alphabet ↔ Number Quiz</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .test-controls {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .test-controls button {
+            padding: 0.75rem 1.5rem;
+            margin: 0 0.5rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .test-controls button:hover {
+            background: #0056b3;
+        }
+        
+        .test-controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .test-summary {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+        
+        .test-summary.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-summary.failure {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-summary.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .timer-demo {
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: #007bff;
+        }
+        
+        .timer-display.warning {
+            color: #ffc107;
+        }
+        
+        .timer-display.danger {
+            color: #dc3545;
+        }
+        
+        .demo-controls button {
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .demo-controls button:hover {
+            background: #218838;
+        }
+        
+        .demo-controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Timer Class Unit Tests</h1>
+        <p>Comprehensive testing for the Timer class functionality</p>
+    </div>
+    
+    <div class="test-controls">
+        <button id="run-tests-btn">Run All Tests</button>
+        <button id="clear-output-btn">Clear Output</button>
+        <button id="run-demo-btn">Run Timer Demo</button>
+    </div>
+    
+    <div id="test-summary" class="test-summary" style="display: none;">
+        <div id="summary-text"></div>
+    </div>
+    
+    <div id="test-output" class="test-output">
+        Click "Run All Tests" to start testing the Timer class...
+    </div>
+    
+    <div class="timer-demo">
+        <h3>Interactive Timer Demo</h3>
+        <div id="timer-display" class="timer-display">--</div>
+        <div class="demo-controls">
+            <button id="demo-start-5">Start 5s</button>
+            <button id="demo-start-10">Start 10s</button>
+            <button id="demo-pause">Pause</button>
+            <button id="demo-resume">Resume</button>
+            <button id="demo-stop">Stop</button>
+            <button id="demo-add-time">+3s</button>
+        </div>
+        <div id="demo-status" style="margin-top: 1rem; font-style: italic;"></div>
+    </div>
+
+    <!-- Load the main script with Timer class -->
+    <script src="script.js"></script>
+    
+    <!-- Load the Timer tests -->
+    <script src="test-timer.js"></script>
+    
+    <script>
+        // Test runner UI logic
+        let isTestsRunning = false;
+        let demoTimer = null;
+        
+        // DOM elements
+        const runTestsBtn = document.getElementById('run-tests-btn');
+        const clearOutputBtn = document.getElementById('clear-output-btn');
+        const runDemoBtn = document.getElementById('run-demo-btn');
+        const testOutput = document.getElementById('test-output');
+        const testSummary = document.getElementById('test-summary');
+        const summaryText = document.getElementById('summary-text');
+        
+        // Demo elements
+        const timerDisplay = document.getElementById('timer-display');
+        const demoStatus = document.getElementById('demo-status');
+        const demoStart5 = document.getElementById('demo-start-5');
+        const demoStart10 = document.getElementById('demo-start-10');
+        const demoPause = document.getElementById('demo-pause');
+        const demoResume = document.getElementById('demo-resume');
+        const demoStop = document.getElementById('demo-stop');
+        const demoAddTime = document.getElementById('demo-add-time');
+        
+        // Override console.log to capture test output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        function captureConsoleOutput() {
+            console.log = (...args) => {
+                const message = args.join(' ');
+                testOutput.textContent += message + '\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+                originalConsoleLog(...args);
+            };
+            
+            console.error = (...args) => {
+                const message = args.join(' ');
+                testOutput.textContent += message + '\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+                originalConsoleError(...args);
+            };
+        }
+        
+        function restoreConsoleOutput() {
+            console.log = originalConsoleLog;
+            console.error = originalConsoleError;
+        }
+        
+        // Event listeners
+        runTestsBtn.addEventListener('click', async () => {
+            if (isTestsRunning) return;
+            
+            isTestsRunning = true;
+            runTestsBtn.disabled = true;
+            runTestsBtn.textContent = 'Running Tests...';
+            
+            // Show running status
+            testSummary.style.display = 'block';
+            testSummary.className = 'test-summary running';
+            summaryText.textContent = 'Running Timer tests...';
+            
+            // Clear output and capture console
+            testOutput.textContent = '';
+            captureConsoleOutput();
+            
+            try {
+                const results = await runTimerTests();
+                
+                // Show results summary
+                if (results.failed === 0) {
+                    testSummary.className = 'test-summary success';
+                    summaryText.textContent = `✅ All ${results.total} tests passed!`;
+                } else {
+                    testSummary.className = 'test-summary failure';
+                    summaryText.textContent = `❌ ${results.failed} of ${results.total} tests failed.`;
+                }
+            } catch (error) {
+                testSummary.className = 'test-summary failure';
+                summaryText.textContent = `❌ Test execution failed: ${error.message}`;
+            } finally {
+                restoreConsoleOutput();
+                isTestsRunning = false;
+                runTestsBtn.disabled = false;
+                runTestsBtn.textContent = 'Run All Tests';
+            }
+        });
+        
+        clearOutputBtn.addEventListener('click', () => {
+            testOutput.textContent = 'Output cleared. Click "Run All Tests" to start testing...';
+            testSummary.style.display = 'none';
+        });
+        
+        // Timer demo functionality
+        function updateTimerDisplay(timeRemaining) {
+            timerDisplay.textContent = timeRemaining;
+            
+            // Update color based on time remaining
+            timerDisplay.className = 'timer-display';
+            if (timeRemaining <= 3 && timeRemaining > 0) {
+                timerDisplay.className += ' danger';
+            } else if (timeRemaining <= 5 && timeRemaining > 3) {
+                timerDisplay.className += ' warning';
+            }
+        }
+        
+        function updateDemoStatus(message) {
+            demoStatus.textContent = message;
+        }
+        
+        function updateDemoButtons() {
+            const isActive = demoTimer && demoTimer.isActive();
+            const isPaused = demoTimer && demoTimer.isPausedState();
+            
+            demoStart5.disabled = isActive;
+            demoStart10.disabled = isActive;
+            demoPause.disabled = !isActive || isPaused;
+            demoResume.disabled = !isPaused;
+            demoStop.disabled = !isActive;
+            demoAddTime.disabled = !isActive;
+        }
+        
+        demoStart5.addEventListener('click', () => {
+            if (demoTimer) {
+                demoTimer.stop();
+            }
+            
+            demoTimer = new Timer();
+            demoTimer.start(5, 
+                () => {
+                    updateDemoStatus('Timer completed!');
+                    updateDemoButtons();
+                },
+                (timeRemaining) => {
+                    updateTimerDisplay(timeRemaining);
+                }
+            );
+            
+            updateDemoStatus('5-second timer started');
+            updateDemoButtons();
+        });
+        
+        demoStart10.addEventListener('click', () => {
+            if (demoTimer) {
+                demoTimer.stop();
+            }
+            
+            demoTimer = new Timer();
+            demoTimer.start(10, 
+                () => {
+                    updateDemoStatus('Timer completed!');
+                    updateDemoButtons();
+                },
+                (timeRemaining) => {
+                    updateTimerDisplay(timeRemaining);
+                }
+            );
+            
+            updateDemoStatus('10-second timer started');
+            updateDemoButtons();
+        });
+        
+        demoPause.addEventListener('click', () => {
+            if (demoTimer) {
+                demoTimer.pause();
+                updateDemoStatus('Timer paused');
+                updateDemoButtons();
+            }
+        });
+        
+        demoResume.addEventListener('click', () => {
+            if (demoTimer) {
+                demoTimer.resume();
+                updateDemoStatus('Timer resumed');
+                updateDemoButtons();
+            }
+        });
+        
+        demoStop.addEventListener('click', () => {
+            if (demoTimer) {
+                demoTimer.stop();
+                timerDisplay.textContent = '--';
+                timerDisplay.className = 'timer-display';
+                updateDemoStatus('Timer stopped');
+                updateDemoButtons();
+            }
+        });
+        
+        demoAddTime.addEventListener('click', () => {
+            if (demoTimer && demoTimer.isActive()) {
+                demoTimer.addTime(3);
+                updateDemoStatus('Added 3 seconds to timer');
+            }
+        });
+        
+        // Initialize demo buttons
+        updateDemoButtons();
+        
+        // Auto-run demo
+        runDemoBtn.addEventListener('click', () => {
+            updateDemoStatus('Running automated demo...');
+            
+            // Stop any existing timer
+            if (demoTimer) {
+                demoTimer.stop();
+            }
+            
+            // Create demo sequence
+            let step = 0;
+            const demoSteps = [
+                () => {
+                    updateDemoStatus('Demo: Starting 3-second timer...');
+                    demoTimer = new Timer();
+                    demoTimer.start(3, 
+                        () => {
+                            step++;
+                            setTimeout(demoSteps[step], 500);
+                        },
+                        updateTimerDisplay
+                    );
+                    updateDemoButtons();
+                },
+                () => {
+                    updateDemoStatus('Demo: Timer completed! Starting 5-second timer...');
+                    demoTimer = new Timer();
+                    demoTimer.start(5, 
+                        () => {
+                            step++;
+                            setTimeout(demoSteps[step], 500);
+                        },
+                        updateTimerDisplay
+                    );
+                    updateDemoButtons();
+                    
+                    // Pause after 2 seconds
+                    setTimeout(() => {
+                        demoTimer.pause();
+                        updateDemoStatus('Demo: Timer paused for 2 seconds...');
+                        updateDemoButtons();
+                        
+                        // Resume after 2 seconds
+                        setTimeout(() => {
+                            demoTimer.resume();
+                            updateDemoStatus('Demo: Timer resumed...');
+                            updateDemoButtons();
+                        }, 2000);
+                    }, 2000);
+                },
+                () => {
+                    updateDemoStatus('Demo completed! All Timer functionality demonstrated.');
+                    timerDisplay.textContent = '--';
+                    timerDisplay.className = 'timer-display';
+                    updateDemoButtons();
+                }
+            ];
+            
+            // Start demo
+            demoSteps[0]();
+        });
+    </script>
+</body>
+</html>

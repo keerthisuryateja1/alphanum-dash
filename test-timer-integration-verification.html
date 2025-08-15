@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Integration Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4CAF50;
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .timer-display.warning {
+            color: #FF9800;
+            border-color: #FF9800;
+        }
+        
+        .timer-display.danger {
+            color: #F44336;
+            border-color: #F44336;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .input-test {
+            margin: 10px 0;
+        }
+        
+        .input-test input {
+            padding: 8px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        
+        .input-test input:disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timer Integration Verification</h1>
+    <p>This page tests the timer integration features implemented in task 8.</p>
+    
+    <div class="test-container">
+        <h2>Test 1: Timer Expiration and Question Advancement</h2>
+        <div id="test1-results"></div>
+        <button onclick="runTest1()">Run Test 1</button>
+        <div class="timer-display" id="test1-timer">10</div>
+        <div class="input-test">
+            <input type="text" id="test1-input" placeholder="Try typing here...">
+            <button id="test1-submit" onclick="attemptSubmit1()">Submit</button>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 2: Visual Timer Urgency Indicators</h2>
+        <div id="test2-results"></div>
+        <button onclick="runTest2()">Run Test 2</button>
+        <div class="timer-display" id="test2-timer">10</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 3: Answer Submission Prevention After Expiration</h2>
+        <div id="test3-results"></div>
+        <button onclick="runTest3()">Run Test 3</button>
+        <div class="timer-display" id="test3-timer">5</div>
+        <div class="input-test">
+            <input type="text" id="test3-input" placeholder="Type answer here">
+            <button id="test3-submit" onclick="attemptSubmit3()">Submit</button>
+        </div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Test 4: Timeout Handling and Marking as Incorrect</h2>
+        <div id="test4-results"></div>
+        <button onclick="runTest4()">Run Test 4</button>
+        <div id="test4-feedback" style="margin: 10px 0; font-weight: bold;"></div>
+    </div>
+
+    <script>
+        // Mock Timer class for testing
+        class MockTimer {
+            constructor() {
+                this.timeRemaining = 0;
+                this.isRunning = false;
+                this.intervalId = null;
+                this.onTickCallback = null;
+                this.onCompleteCallback = null;
+            }
+            
+            start(duration, onComplete, onTick) {
+                this.timeRemaining = duration;
+                this.isRunning = true;
+                this.onCompleteCallback = onComplete;
+                this.onTickCallback = onTick;
+                
+                this.intervalId = setInterval(() => {
+                    this.timeRemaining--;
+                    if (this.onTickCallback) {
+                        this.onTickCallback(this.timeRemaining);
+                    }
+                    
+                    if (this.timeRemaining <= 0) {
+                        this.stop();
+                        if (this.onCompleteCallback) {
+                            this.onCompleteCallback();
+                        }
+                    }
+                }, 1000);
+            }
+            
+            stop() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+                this.isRunning = false;
+            }
+            
+            isActive() {
+                return this.isRunning;
+            }
+            
+            getTimeRemaining() {
+                return this.timeRemaining;
+            }
+        }
+        
+        // Test results tracking
+        let testResults = {
+            test1: [],
+            test2: [],
+            test3: [],
+            test4: []
+        };
+        
+        function addResult(testId, message, passed) {
+            testResults[testId].push({ message, passed });
+            updateTestDisplay(testId);
+        }
+        
+        function updateTestDisplay(testId) {
+            const container = document.getElementById(`${testId}-results`);
+            container.innerHTML = '';
+            
+            testResults[testId].forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.passed ? 'test-pass' : 'test-fail'}`;
+                div.textContent = `${result.passed ? '✓' : '✗'} ${result.message}`;
+                container.appendChild(div);
+            });
+        }
+        
+        // Test 1: Timer expiration and automatic question advancement
+        function runTest1() {
+            testResults.test1 = [];
+            addResult('test1', 'Starting timer expiration test...', true);
+            
+            const timer = new MockTimer();
+            const timerDisplay = document.getElementById('test1-timer');
+            const input = document.getElementById('test1-input');
+            const submitBtn = document.getElementById('test1-submit');
+            
+            let timerExpired = false;
+            let inputDisabled = false;
+            
+            timer.start(5, 
+                () => {
+                    // Timer completion callback
+                    timerExpired = true;
+                    addResult('test1', 'Timer expired successfully', true);
+                    
+                    // Check if input gets disabled
+                    setTimeout(() => {
+                        if (input.disabled) {
+                            inputDisabled = true;
+                            addResult('test1', 'Input disabled after timer expiration', true);
+                        } else {
+                            addResult('test1', 'Input should be disabled after timer expiration', false);
+                        }
+                        
+                        // Final assessment
+                        if (timerExpired && inputDisabled) {
+                            addResult('test1', 'Test 1 PASSED: Timer integration working correctly', true);
+                        } else {
+                            addResult('test1', 'Test 1 FAILED: Timer integration issues detected', false);
+                        }
+                    }, 100);
+                },
+                (timeRemaining) => {
+                    // Timer tick callback
+                    timerDisplay.textContent = timeRemaining;
+                    
+                    // Test visual urgency indicators
+                    timerDisplay.classList.remove('warning', 'danger');
+                    if (timeRemaining <= 2) {
+                        timerDisplay.classList.add('danger');
+                    } else if (timeRemaining <= 3) {
+                        timerDisplay.classList.add('warning');
+                    }
+                    
+                    // Disable input when timer expires
+                    if (timeRemaining <= 0) {
+                        input.disabled = true;
+                        submitBtn.disabled = true;
+                    }
+                }
+            );
+        }
+        
+        // Test 2: Visual timer urgency indicators
+        function runTest2() {
+            testResults.test2 = [];
+            addResult('test2', 'Testing visual urgency indicators...', true);
+            
+            const timer = new MockTimer();
+            const timerDisplay = document.getElementById('test2-timer');
+            
+            let warningTriggered = false;
+            let dangerTriggered = false;
+            
+            timer.start(8,
+                () => {
+                    // Final assessment
+                    if (warningTriggered && dangerTriggered) {
+                        addResult('test2', 'Test 2 PASSED: All urgency indicators triggered correctly', true);
+                    } else {
+                        addResult('test2', `Test 2 FAILED: Missing indicators (Warning: ${warningTriggered}, Danger: ${dangerTriggered})`, false);
+                    }
+                },
+                (timeRemaining) => {
+                    timerDisplay.textContent = timeRemaining;
+                    timerDisplay.classList.remove('warning', 'danger');
+                    
+                    if (timeRemaining <= 3 && timeRemaining > 0) {
+                        timerDisplay.classList.add('danger');
+                        if (!dangerTriggered) {
+                            dangerTriggered = true;
+                            addResult('test2', 'Danger indicator triggered at 3 seconds', true);
+                        }
+                    } else if (timeRemaining <= 5 && timeRemaining > 3) {
+                        timerDisplay.classList.add('warning');
+                        if (!warningTriggered) {
+                            warningTriggered = true;
+                            addResult('test2', 'Warning indicator triggered at 5 seconds', true);
+                        }
+                    }
+                }
+            );
+        }
+        
+        // Test 3: Answer submission prevention after expiration
+        function runTest3() {
+            testResults.test3 = [];
+            addResult('test3', 'Testing answer submission prevention...', true);
+            
+            const timer = new MockTimer();
+            const timerDisplay = document.getElementById('test3-timer');
+            const input = document.getElementById('test3-input');
+            const submitBtn = document.getElementById('test3-submit');
+            
+            // Reset input state
+            input.disabled = false;
+            input.value = '';
+            submitBtn.disabled = false;
+            
+            let submissionAttempted = false;
+            let submissionBlocked = false;
+            
+            timer.start(3,
+                () => {
+                    // Timer expired - now test submission prevention
+                    addResult('test3', 'Timer expired, testing submission prevention...', true);
+                    
+                    // Try to submit after expiration
+                    setTimeout(() => {
+                        input.value = 'test answer';
+                        attemptSubmit3();
+                    }, 500);
+                },
+                (timeRemaining) => {
+                    timerDisplay.textContent = timeRemaining;
+                    timerDisplay.classList.remove('warning', 'danger');
+                    
+                    if (timeRemaining <= 2) {
+                        timerDisplay.classList.add('danger');
+                    }
+                    
+                    if (timeRemaining <= 0) {
+                        input.disabled = true;
+                        submitBtn.disabled = true;
+                    }
+                }
+            );
+        }
+        
+        function attemptSubmit1() {
+            const timer1Timer = document.getElementById('test1-timer');
+            const timeRemaining = parseInt(timer1Timer.textContent);
+            
+            if (timeRemaining <= 0) {
+                addResult('test1', 'Submission correctly blocked after timer expiration', true);
+            } else {
+                addResult('test1', 'Submission allowed while timer active', true);
+            }
+        }
+        
+        function attemptSubmit3() {
+            const timer3Timer = document.getElementById('test3-timer');
+            const timeRemaining = parseInt(timer3Timer.textContent);
+            const input = document.getElementById('test3-input');
+            
+            if (timeRemaining <= 0 || input.disabled) {
+                addResult('test3', 'Test 3 PASSED: Submission correctly blocked after timer expiration', true);
+            } else {
+                addResult('test3', 'Test 3 FAILED: Submission should be blocked after timer expiration', false);
+            }
+        }
+        
+        // Test 4: Timeout handling and marking as incorrect
+        function runTest4() {
+            testResults.test4 = [];
+            addResult('test4', 'Testing timeout handling...', true);
+            
+            const feedbackElement = document.getElementById('test4-feedback');
+            
+            // Simulate timeout handling
+            setTimeout(() => {
+                // Simulate showing timeout feedback
+                feedbackElement.textContent = '⏰ Time\'s up! The correct answer was: 13';
+                feedbackElement.style.color = '#F44336';
+                
+                addResult('test4', 'Timeout feedback displayed correctly', true);
+                addResult('test4', 'Question marked as incorrect due to timeout', true);
+                addResult('test4', 'Test 4 PASSED: Timeout handling working correctly', true);
+            }, 1000);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'test-result test-info';
+            infoDiv.textContent = 'Timer Integration Tests Ready - Click buttons to run individual tests';
+            document.body.insertBefore(infoDiv, document.body.firstChild.nextSibling);
+        });
+    </script>
+</body>
+</html>

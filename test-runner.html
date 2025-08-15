@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuestionGenerator Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        #test-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            color: #ffc107;
+        }
+        
+        .status.passed {
+            color: #28a745;
+        }
+        
+        .status.failed {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 QuestionGenerator Unit Tests</h1>
+        
+        <div class="test-controls">
+            <button id="run-tests" onclick="runTests()">Run Tests</button>
+            <button id="clear-output" onclick="clearOutput()">Clear Output</button>
+        </div>
+        
+        <div id="status" class="status"></div>
+        <div id="test-output"></div>
+    </div>
+
+    <!-- Include the CONFIG object and QuestionGenerator class -->
+    <script>
+        // Configuration constants (from main app)
+        const CONFIG = {
+            TOTAL_QUESTIONS: 10,
+            QUESTION_TIME_LIMIT: 10,
+            MIN_NUMBER: 1,
+            MAX_NUMBER: 26
+        };
+    </script>
+    
+    <!-- Include QuestionGenerator class from main script -->
+    <script>
+        /**
+         * QuestionGenerator class
+         * Handles question creation and answer validation for alphabet-number conversions
+         */
+        class QuestionGenerator {
+            constructor() {
+                this.questionTypes = ['alphabet-to-number', 'number-to-alphabet'];
+                this.alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            }
+            
+            /**
+             * Generates a random question of either type
+             * @returns {Object} Question object with id, type, prompt, correctAnswer, and displayValue
+             */
+            generateQuestion() {
+                const questionType = this.getRandomQuestionType();
+                const questionId = this.generateQuestionId();
+                
+                if (questionType === 'alphabet-to-number') {
+                    return this.generateAlphabetToNumberQuestion(questionId);
+                } else {
+                    return this.generateNumberToAlphabetQuestion(questionId);
+                }
+            }
+            
+            /**
+             * Generates an alphabet-to-number question (e.g., "What number is the letter M?")
+             * @param {string} questionId - Unique identifier for the question
+             * @returns {Object} Question object
+             */
+            generateAlphabetToNumberQuestion(questionId) {
+                const randomIndex = Math.floor(Math.random() * 26);
+                const letter = this.alphabet[randomIndex];
+                const correctNumber = randomIndex + 1;
+                
+                return {
+                    id: questionId,
+                    type: 'alphabet-to-number',
+                    prompt: `What number is the letter ${letter}?`,
+                    correctAnswer: correctNumber.toString(),
+                    displayValue: letter
+                };
+            }
+            
+            /**
+             * Generates a number-to-alphabet question (e.g., "What letter is number 13?")
+             * @param {string} questionId - Unique identifier for the question
+             * @returns {Object} Question object
+             */
+            generateNumberToAlphabetQuestion(questionId) {
+                const randomNumber = Math.floor(Math.random() * 26) + 1;
+                const correctLetter = this.alphabet[randomNumber - 1];
+                
+                return {
+                    id: questionId,
+                    type: 'number-to-alphabet',
+                    prompt: `What letter is number ${randomNumber}?`,
+                    correctAnswer: correctLetter,
+                    displayValue: randomNumber.toString()
+                };
+            }
+            
+            /**
+             * Validates a user's answer against the correct answer
+             * @param {string} userAnswer - The user's input answer
+             * @param {string} correctAnswer - The correct answer
+             * @returns {boolean} True if the answer is correct, false otherwise
+             */
+            validateAnswer(userAnswer, correctAnswer) {
+                if (!userAnswer || !correctAnswer) {
+                    return false;
+                }
+                
+                // Normalize both answers for comparison
+                const normalizedUserAnswer = this.normalizeAnswer(userAnswer);
+                const normalizedCorrectAnswer = this.normalizeAnswer(correctAnswer);
+                
+                return normalizedUserAnswer === normalizedCorrectAnswer;
+            }
+            
+            /**
+             * Normalizes an answer for comparison (handles case insensitivity and whitespace)
+             * @param {string} answer - The answer to normalize
+             * @returns {string} Normalized answer
+             */
+            normalizeAnswer(answer) {
+                return answer.toString().trim().toUpperCase();
+            }
+            
+            /**
+             * Gets available question types
+             * @returns {Array<string>} Array of question type strings
+             */
+            getQuestionTypes() {
+                return [...this.questionTypes];
+            }
+            
+            /**
+             * Validates if a user input is a valid letter (A-Z)
+             * @param {string} input - User input to validate
+             * @returns {boolean} True if valid letter, false otherwise
+             */
+            isValidLetter(input) {
+                if (!input || typeof input !== 'string') {
+                    return false;
+                }
+                
+                const normalized = input.trim().toUpperCase();
+                return normalized.length === 1 && /^[A-Z]$/.test(normalized);
+            }
+            
+            /**
+             * Validates if a user input is a valid number (1-26)
+             * @param {string} input - User input to validate
+             * @returns {boolean} True if valid number in range, false otherwise
+             */
+            isValidNumber(input) {
+                if (!input || typeof input !== 'string') {
+                    return false;
+                }
+                
+                const trimmed = input.trim();
+                const number = parseInt(trimmed, 10);
+                
+                // Check if it's a valid integer and in range
+                return !isNaN(number) && 
+                       number.toString() === trimmed && 
+                       number >= CONFIG.MIN_NUMBER && 
+                       number <= CONFIG.MAX_NUMBER;
+            }
+            
+            /**
+             * Validates user input based on expected answer type
+             * @param {string} input - User input to validate
+             * @param {string} expectedType - Expected answer type ('letter' or 'number')
+             * @returns {Object} Validation result with isValid and errorMessage
+             */
+            validateInput(input, expectedType) {
+                if (!input || input.trim() === '') {
+                    return {
+                        isValid: false,
+                        errorMessage: 'Please enter an answer'
+                    };
+                }
+                
+                if (expectedType === 'letter') {
+                    if (!this.isValidLetter(input)) {
+                        return {
+                            isValid: false,
+                            errorMessage: 'Please enter a single letter (A-Z)'
+                        };
+                    }
+                } else if (expectedType === 'number') {
+                    if (!this.isValidNumber(input)) {
+                        return {
+                            isValid: false,
+                            errorMessage: 'Please enter a number between 1 and 26'
+                        };
+                    }
+                }
+                
+                return {
+                    isValid: true,
+                    errorMessage: null
+                };
+            }
+            
+            /**
+             * Gets a random question type
+             * @returns {string} Random question type
+             */
+            getRandomQuestionType() {
+                const randomIndex = Math.floor(Math.random() * this.questionTypes.length);
+                return this.questionTypes[randomIndex];
+            }
+            
+            /**
+             * Generates a unique question ID
+             * @returns {string} Unique question identifier
+             */
+            generateQuestionId() {
+                return `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            }
+        }
+    </script>
+    
+    <!-- Include test suite -->
+    <script src="test-question-generator.js"></script>
+    
+    <script>
+        let originalConsoleLog = console.log;
+        let originalConsoleError = console.error;
+        
+        function runTests() {
+            const runButton = document.getElementById('run-tests');
+            const statusDiv = document.getElementById('status');
+            const outputDiv = document.getElementById('test-output');
+            
+            runButton.disabled = true;
+            statusDiv.textContent = 'Running tests...';
+            statusDiv.className = 'status running';
+            outputDiv.textContent = '';
+            
+            // Capture console output
+            let output = '';
+            console.log = function(...args) {
+                output += args.join(' ') + '\n';
+                outputDiv.textContent = output;
+                originalConsoleLog.apply(console, args);
+            };
+            
+            console.error = function(...args) {
+                output += 'ERROR: ' + args.join(' ') + '\n';
+                outputDiv.textContent = output;
+                originalConsoleError.apply(console, args);
+            };
+            
+            // Run the tests
+            window.runQuestionGeneratorTests().then(success => {
+                // Restore console
+                console.log = originalConsoleLog;
+                console.error = originalConsoleError;
+                
+                runButton.disabled = false;
+                
+                if (success) {
+                    statusDiv.textContent = '✅ All tests passed!';
+                    statusDiv.className = 'status passed';
+                } else {
+                    statusDiv.textContent = '❌ Some tests failed!';
+                    statusDiv.className = 'status failed';
+                }
+            }).catch(error => {
+                console.log = originalConsoleLog;
+                console.error = originalConsoleError;
+                
+                runButton.disabled = false;
+                statusDiv.textContent = '💥 Test execution failed!';
+                statusDiv.className = 'status failed';
+                outputDiv.textContent += '\nERROR: ' + error.message;
+            });
+        }
+        
+        function clearOutput() {
+            document.getElementById('test-output').textContent = '';
+            document.getElementById('status').textContent = '';
+            document.getElementById('status').className = 'status';
+        }
+    </script>
+</body>
+</html>

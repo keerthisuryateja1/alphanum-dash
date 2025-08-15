@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIManager Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .run-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .run-button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-results">
+        <h1>UIManager Test Runner</h1>
+        <button class="run-button" onclick="runTests()">Run Tests</button>
+        <div id="test-output" class="test-output">Click "Run Tests" to start testing...</div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Override console.log to capture output
+        const originalLog = console.log;
+        let testOutput = '';
+        
+        console.log = function(...args) {
+            testOutput += args.join(' ') + '\n';
+            originalLog.apply(console, args);
+            document.getElementById('test-output').textContent = testOutput;
+        };
+
+        // Initialize DOM elements for testing
+        function initializeMockDOM() {
+            // Create mock elements object
+            window.elements = {
+                startSection: { style: { display: 'block' } },
+                quizSection: { style: { display: 'none' } },
+                resultsSection: { style: { display: 'none' } },
+                
+                currentQuestionSpan: { textContent: '1' },
+                totalQuestionsSpan: { textContent: '10' },
+                timerDisplay: { 
+                    textContent: '10',
+                    classList: {
+                        remove: function() {},
+                        add: function() {}
+                    },
+                    setAttribute: function() {}
+                },
+                questionDisplay: { textContent: '' },
+                answerInput: { 
+                    value: '',
+                    disabled: false,
+                    focus: function() {},
+                    setAttribute: function() {}
+                },
+                submitBtn: { disabled: false },
+                feedback: { 
+                    textContent: '',
+                    classList: {
+                        remove: function() {},
+                        add: function() {}
+                    },
+                    setAttribute: function() {}
+                },
+                
+                scoreSummary: { innerHTML: '' },
+                detailedResults: { innerHTML: '' }
+            };
+            
+            // Mock document.getElementById
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                if (id === 'progress') {
+                    return { setAttribute: function() {} };
+                }
+                if (id === 'sr-live-region') {
+                    return null;
+                }
+                return originalGetElementById.call(document, id);
+            };
+        }
+
+        async function runTests() {
+            testOutput = '';
+            document.getElementById('test-output').textContent = 'Running tests...';
+            
+            initializeMockDOM();
+            
+            // Test suite
+            class UIManagerTestSuite {
+                constructor() {
+                    this.tests = [];
+                    this.passed = 0;
+                    this.failed = 0;
+                }
+                
+                addTest(name, testFunction) {
+                    this.tests.push({ name, testFunction });
+                }
+                
+                async runTests() {
+                    console.log('🧪 Starting UIManager Test Suite...\n');
+                    
+                    for (const test of this.tests) {
+                        try {
+                            await test.testFunction();
+                            this.passed++;
+                            console.log(`✅ ${test.name}`);
+                        } catch (error) {
+                            this.failed++;
+                            console.log(`❌ ${test.name}: ${error.message}`);
+                        }
+                    }
+                    
+                    console.log(`\n📊 Test Results: ${this.passed} passed, ${this.failed} failed`);
+                    return this.failed === 0;
+                }
+                
+                assert(condition, message) {
+                    if (!condition) {
+                        throw new Error(message);
+                    }
+                }
+                
+                assertEqual(actual, expected, message) {
+                    if (actual !== expected) {
+                        throw new Error(`${message}: expected ${expected}, got ${actual}`);
+                    }
+                }
+            }
+
+            const testSuite = new UIManagerTestSuite();
+
+            // Test 1: UIManager constructor
+            testSuite.addTest('UIManager constructor initializes correctly', () => {
+                const uiManager = new UIManager();
+                testSuite.assert(uiManager.currentSection === 'start', 'Initial section should be start');
+                testSuite.assert(uiManager.feedbackTimeout === null, 'Feedback timeout should be null initially');
+            });
+
+            // Test 2: displayQuestion method
+            testSuite.addTest('displayQuestion updates question and progress', () => {
+                const uiManager = new UIManager();
+                const sampleQuestion = {
+                    id: 'test-1',
+                    type: 'alphabet-to-number',
+                    prompt: 'What number is the letter M?',
+                    correctAnswer: '13',
+                    displayValue: 'M'
+                };
+                
+                uiManager.displayQuestion(sampleQuestion, 5);
+                
+                testSuite.assertEqual(
+                    elements.questionDisplay.textContent, 
+                    'What number is the letter M?',
+                    'Question text should be updated'
+                );
+                testSuite.assertEqual(
+                    elements.currentQuestionSpan.textContent,
+                    '5',
+                    'Current question number should be updated'
+                );
+            });
+
+            // Test 3: updateProgress method
+            testSuite.addTest('updateProgress updates progress indicators', () => {
+                const uiManager = new UIManager();
+                uiManager.updateProgress(7, 10);
+                
+                testSuite.assertEqual(
+                    elements.currentQuestionSpan.textContent,
+                    '7',
+                    'Current question should be updated'
+                );
+                testSuite.assertEqual(
+                    elements.totalQuestionsSpan.textContent,
+                    '10',
+                    'Total questions should be updated'
+                );
+            });
+
+            // Test 4: updateTimer method
+            testSuite.addTest('updateTimer updates timer display', () => {
+                const uiManager = new UIManager();
+                
+                uiManager.updateTimer(8);
+                testSuite.assertEqual(
+                    elements.timerDisplay.textContent,
+                    '8',
+                    'Timer should show correct time'
+                );
+                
+                uiManager.updateTimer(4);
+                testSuite.assertEqual(
+                    elements.timerDisplay.textContent,
+                    '4',
+                    'Timer should show warning time'
+                );
+                
+                uiManager.updateTimer(2);
+                testSuite.assertEqual(
+                    elements.timerDisplay.textContent,
+                    '2',
+                    'Timer should show danger time'
+                );
+            });
+
+            // Test 5: showFeedback method
+            testSuite.addTest('showFeedback displays correct and incorrect feedback', () => {
+                const uiManager = new UIManager();
+                
+                uiManager.showFeedback(true, '13');
+                testSuite.assertEqual(
+                    elements.feedback.textContent,
+                    '✓ Correct!',
+                    'Correct feedback should be displayed'
+                );
+                
+                uiManager.showFeedback(false, '13', '15');
+                testSuite.assert(
+                    elements.feedback.textContent.includes('✗ Incorrect'),
+                    'Incorrect feedback should be displayed'
+                );
+                testSuite.assert(
+                    elements.feedback.textContent.includes('13'),
+                    'Correct answer should be shown'
+                );
+            });
+
+            // Test 6: showSection method
+            testSuite.addTest('showSection switches between sections correctly', () => {
+                const uiManager = new UIManager();
+                
+                uiManager.showSection('quiz');
+                testSuite.assertEqual(uiManager.currentSection, 'quiz', 'Current section should be quiz');
+                testSuite.assertEqual(elements.quizSection.style.display, 'block', 'Quiz section should be visible');
+                testSuite.assertEqual(elements.startSection.style.display, 'none', 'Start section should be hidden');
+                
+                uiManager.showSection('results');
+                testSuite.assertEqual(uiManager.currentSection, 'results', 'Current section should be results');
+                testSuite.assertEqual(elements.resultsSection.style.display, 'block', 'Results section should be visible');
+                testSuite.assertEqual(elements.quizSection.style.display, 'none', 'Quiz section should be hidden');
+            });
+
+            // Test 7: clearAnswerInput method
+            testSuite.addTest('clearAnswerInput clears the input field', () => {
+                elements.answerInput.value = 'test answer';
+                
+                const uiManager = new UIManager();
+                uiManager.clearAnswerInput();
+                
+                testSuite.assertEqual(
+                    elements.answerInput.value,
+                    '',
+                    'Answer input should be cleared'
+                );
+            });
+
+            // Test 8: getCurrentAnswer method
+            testSuite.addTest('getCurrentAnswer returns current input value', () => {
+                elements.answerInput.value = '  test answer  ';
+                
+                const uiManager = new UIManager();
+                const answer = uiManager.getCurrentAnswer();
+                
+                testSuite.assertEqual(
+                    answer,
+                    'test answer',
+                    'Should return trimmed answer'
+                );
+            });
+
+            // Test 9: getPerformanceLevel method
+            testSuite.addTest('getPerformanceLevel returns correct performance levels', () => {
+                const uiManager = new UIManager();
+                
+                testSuite.assertEqual(
+                    uiManager.getPerformanceLevel(95).text,
+                    'Excellent!',
+                    'Should return Excellent for 95%'
+                );
+                
+                testSuite.assertEqual(
+                    uiManager.getPerformanceLevel(85).text,
+                    'Great job!',
+                    'Should return Great job for 85%'
+                );
+                
+                testSuite.assertEqual(
+                    uiManager.getPerformanceLevel(75).text,
+                    'Good work!',
+                    'Should return Good work for 75%'
+                );
+                
+                testSuite.assertEqual(
+                    uiManager.getPerformanceLevel(65).text,
+                    'Not bad!',
+                    'Should return Not bad for 65%'
+                );
+                
+                testSuite.assertEqual(
+                    uiManager.getPerformanceLevel(45).text,
+                    'Keep practicing!',
+                    'Should return Keep practicing for 45%'
+                );
+            });
+
+            // Test 10: getStatusIcon method
+            testSuite.addTest('getStatusIcon returns correct icons', () => {
+                const uiManager = new UIManager();
+                
+                testSuite.assertEqual(uiManager.getStatusIcon('correct'), '✓', 'Should return checkmark for correct');
+                testSuite.assertEqual(uiManager.getStatusIcon('incorrect'), '✗', 'Should return X for incorrect');
+                testSuite.assertEqual(uiManager.getStatusIcon('timeout'), '⏰', 'Should return clock for timeout');
+                testSuite.assertEqual(uiManager.getStatusIcon('unknown'), '?', 'Should return ? for unknown');
+            });
+
+            // Test 11: reset method
+            testSuite.addTest('reset method resets UI to initial state', () => {
+                const uiManager = new UIManager();
+                
+                // Set some state
+                uiManager.currentSection = 'quiz';
+                elements.answerInput.value = 'test';
+                elements.feedback.textContent = 'some feedback';
+                
+                // Reset
+                uiManager.reset();
+                
+                testSuite.assertEqual(uiManager.currentSection, 'start', 'Should reset to start section');
+                testSuite.assertEqual(elements.answerInput.value, '', 'Should clear input');
+                testSuite.assertEqual(elements.feedback.textContent, '', 'Should clear feedback');
+            });
+
+            // Run all tests
+            const success = await testSuite.runTests();
+            
+            if (success) {
+                console.log('\n🎉 All UIManager tests passed!');
+            } else {
+                console.log('\n💥 Some UIManager tests failed!');
+            }
+        }
+    </script>
+</body>
+</html>

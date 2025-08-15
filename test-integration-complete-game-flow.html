@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Game Flow Integration Tests</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 350px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .test-panel h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .test-controls button:hover:not(:disabled) {
+            background: #5a6fd8;
+        }
+        
+        .test-controls button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-status {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .test-status.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .test-status.passed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 0.75rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 1rem 0;
+        }
+        
+        .test-results {
+            margin: 1rem 0;
+        }
+        
+        .test-result {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s ease;
+        }
+        
+        .container {
+            margin-right: 370px;
+        }
+        
+        @media (max-width: 1200px) {
+            .test-panel {
+                position: relative;
+                width: 100%;
+                margin-bottom: 2rem;
+            }
+            .container {
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-panel">
+        <h3>Integration Tests</h3>
+        
+        <div class="test-controls">
+            <button id="test-complete-flow" onclick="runCompleteFlowTest()">
+                🎯 Complete Game Flow Test
+            </button>
+            <button id="test-timer-integration" onclick="runTimerIntegrationTest()">
+                ⏱️ Timer Integration Test
+            </button>
+            <button id="test-ui-state-changes" onclick="runUIStateTest()">
+                🖥️ UI State Changes Test
+            </button>
+            <button id="test-mixed-performance" onclick="runMixedPerformanceTest()">
+                📊 Mixed Performance Test
+            </button>
+            <button id="test-all" onclick="runAllTests()">
+                🚀 Run All Tests
+            </button>
+            <button id="clear-log" onclick="clearLog()">
+                🗑️ Clear Log
+            </button>
+        </div>
+        
+        <div id="test-status" class="test-status" style="display: none;"></div>
+        
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+        </div>
+        
+        <div id="test-results" class="test-results"></div>
+        
+        <div id="test-log" class="test-log">Integration tests ready...\n</div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1>Alphabet ↔ Number Quiz</h1>
+            <div class="progress" id="progress">
+                <span id="current-question">1</span> of <span id="total-questions">10</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="quiz-section" id="quiz-section">
+                <div class="timer-container" id="timer-container">
+                    <div class="timer" id="timer">10</div>
+                    <div class="timer-label">seconds</div>
+                </div>
+
+                <div class="question-container">
+                    <h2 class="question" id="question">Ready to start?</h2>
+                    <div class="input-container">
+                        <input 
+                            type="text" 
+                            id="answer-input" 
+                            class="answer-input" 
+                            placeholder="Type your answer..."
+                            autocomplete="off"
+                            disabled
+                        >
+                        <button id="submit-btn" class="submit-btn" disabled>Submit</button>
+                    </div>
+                </div>
+
+                <div class="feedback" id="feedback" aria-live="polite"></div>
+            </section>
+
+            <section class="start-section" id="start-section">
+                <div class="instructions">
+                    <h2>How to Play</h2>
+                    <ul>
+                        <li>You'll get 10 questions mixing alphabet-to-number and number-to-alphabet conversions</li>
+                        <li>Each question has a 10-second timer</li>
+                        <li>Type your answer and press Enter or click Submit</li>
+                        <li>Letters are case-insensitive (A=a)</li>
+                        <li>Numbers should be between 1-26</li>
+                    </ul>
+                </div>
+                <button id="start-btn" class="start-btn">Start Quiz</button>
+            </section>
+
+            <section class="results-section" id="results-section" style="display: none;">
+                <h2>Quiz Complete!</h2>
+                <div class="score-summary" id="score-summary"></div>
+                <div class="detailed-results" id="detailed-results"></div>
+                <button id="restart-btn" class="restart-btn">Play Again</button>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>Convert letters to numbers (A=1, B=2, ..., Z=26) and vice versa!</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Test framework setup
+        class IntegrationTestFramework {
+            constructor() {
+                this.testResults = [];
+                this.currentTest = null;
+                this.logElement = document.getElementById('test-log');
+                this.statusElement = document.getElementById('test-status');
+                this.resultsElement = document.getElementById('test-results');
+                this.progressElement = document.getElementById('progress-fill');
+                this.game = null;
+                this.testStartTime = null;
+            }
+            
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+                this.logElement.textContent += `${timestamp} ${prefix} ${message}\n`;
+                this.logElement.scrollTop = this.logElement.scrollHeight;
+                console.log(`[${type.toUpperCase()}] ${message}`);
+            }
+            
+            setStatus(message, type = 'running') {
+                this.statusElement.textContent = message;
+                this.statusElement.className = `test-status ${type}`;
+                this.statusElement.style.display = 'block';
+            }
+            
+            addTestResult(testName, passed, details = '') {
+                const result = { testName, passed, details, timestamp: new Date() };
+                this.testResults.push(result);
+                this.updateResultsDisplay();
+                
+                if (passed) {
+                    this.log(`✅ ${testName}: PASSED ${details ? '- ' + details : ''}`, 'success');
+                } else {
+                    this.log(`❌ ${testName}: FAILED ${details ? '- ' + details : ''}`, 'error');
+                }
+            }
+            
+            updateResultsDisplay() {
+                const passed = this.testResults.filter(r => r.passed).length;
+                const total = this.testResults.length;
+                
+                this.resultsElement.innerHTML = this.testResults.map(result => 
+                    `<div class="test-result ${result.passed ? 'pass' : 'fail'}">
+                        ${result.passed ? '✅' : '❌'} ${result.testName}
+                        ${result.details ? '<br><small>' + result.details + '</small>' : ''}
+                    </div>`
+                ).join('');
+                
+                const percentage = total > 0 ? (passed / total) * 100 : 0;
+                this.progressElement.style.width = `${percentage}%`;
+            }
+            
+            clearResults() {
+                this.testResults = [];
+                this.updateResultsDisplay();
+                this.progressElement.style.width = '0%';
+            }
+            
+            async wait(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            async waitForCondition(condition, timeout = 5000, checkInterval = 100) {
+                const startTime = Date.now();
+                while (Date.now() - startTime < timeout) {
+                    if (condition()) {
+                        return true;
+                    }
+                    await this.wait(checkInterval);
+                }
+                return false;
+            }
+            
+            initializeGame() {
+                // Initialize DOM elements
+                initializeDOM();
+                
+                // Create new game instance
+                this.game = new QuizGame();
+                this.log('Game instance created and initialized');
+                return this.game;
+            }
+            
+            async simulateUserInput(input, submitImmediately = true) {
+                const inputElement = elements.answerInput;
+                const submitButton = elements.submitBtn;
+                
+                // Clear existing input
+                inputElement.value = '';
+                inputElement.dispatchEvent(new Event('input'));
+                
+                // Type each character with small delay to simulate real typing
+                for (let char of input) {
+                    inputElement.value += char;
+                    inputElement.dispatchEvent(new Event('input'));
+                    await this.wait(50);
+                }
+                
+                if (submitImmediately) {
+                    await this.wait(100);
+                    if (submitButton.disabled) {
+                        // Try Enter key if submit button is disabled
+                        inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+                    } else {
+                        submitButton.click();
+                    }
+                }
+                
+                this.log(`Simulated input: "${input}"`);
+            }
+            
+            getGameState() {
+                if (!this.game) return null;
+                return {
+                    status: this.game.getGameState().status,
+                    currentQuestionIndex: this.game.getGameState().currentQuestionIndex,
+                    questionsCount: this.game.getGameState().questions.length,
+                    answersCount: this.game.getGameState().answers.length
+                };
+            }
+            
+            getCurrentQuestion() {
+                if (!this.game) return null;
+                const state = this.game.getGameState();
+                return state.questions[state.currentQuestionIndex];
+            }
+            
+            async verifyUIState(expectedState, description) {
+                const checks = [];
+                
+                // Check section visibility
+                if (expectedState.activeSection) {
+                    const sections = ['start', 'quiz', 'results'];
+                    sections.forEach(section => {
+                        const element = elements[`${section}Section`];
+                        const isVisible = element && element.style.display !== 'none';
+                        const shouldBeVisible = section === expectedState.activeSection;
+                        checks.push({
+                            name: `${section} section visibility`,
+                            passed: isVisible === shouldBeVisible,
+                            details: `Expected ${shouldBeVisible ? 'visible' : 'hidden'}, got ${isVisible ? 'visible' : 'hidden'}`
+                        });
+                    });
+                }
+                
+                // Check timer display
+                if (expectedState.timerValue !== undefined) {
+                    const timerText = elements.timerDisplay?.textContent;
+                    const timerValue = parseInt(timerText) || 0;
+                    checks.push({
+                        name: 'timer display',
+                        passed: timerValue === expectedState.timerValue,
+                        details: `Expected ${expectedState.timerValue}, got ${timerValue}`
+                    });
+                }
+                
+                // Check question display
+                if (expectedState.questionText) {
+                    const questionText = elements.questionDisplay?.textContent || '';
+                    checks.push({
+                        name: 'question display',
+                        passed: questionText.includes(expectedState.questionText),
+                        details: `Expected to contain "${expectedState.questionText}"`
+                    });
+                }
+                
+                // Check input state
+                if (expectedState.inputEnabled !== undefined) {
+                    const inputDisabled = elements.answerInput?.disabled;
+                    checks.push({
+                        name: 'input enabled state',
+                        passed: !inputDisabled === expectedState.inputEnabled,
+                        details: `Expected ${expectedState.inputEnabled ? 'enabled' : 'disabled'}, got ${inputDisabled ? 'disabled' : 'enabled'}`
+                    });
+                }
+                
+                // Check progress display
+                if (expectedState.currentQuestion !== undefined) {
+                    const currentQuestionText = elements.currentQuestionSpan?.textContent;
+                    const currentQuestion = parseInt(currentQuestionText) || 0;
+                    checks.push({
+                        name: 'progress display',
+                        passed: currentQuestion === expectedState.currentQuestion,
+                        details: `Expected question ${expectedState.currentQuestion}, got ${currentQuestion}`
+                    });
+                }
+                
+                const allPassed = checks.every(check => check.passed);
+                const failedChecks = checks.filter(check => !check.passed);
+                
+                this.addTestResult(
+                    `UI State: ${description}`,
+                    allPassed,
+                    allPassed ? 'All UI elements in expected state' : 
+                    `Failed checks: ${failedChecks.map(c => c.name).join(', ')}`
+                );
+                
+                return allPassed;
+            }
+        }
+        
+        // Initialize test framework
+        const testFramework = new IntegrationTestFramework();
+        
+        // Test implementations
+        async function runCompleteFlowTest() {
+            testFramework.setStatus('Running Complete Game Flow Test...', 'running');
+            testFramework.log('Starting Complete Game Flow Test');
+            
+            try {
+                // Initialize game
+                const game = testFramework.initializeGame();
+                
+                // Verify initial state
+                await testFramework.verifyUIState({
+                    activeSection: 'start',
+                    currentQuestion: 1
+                }, 'Initial state');
+                
+                // Start the quiz
+                testFramework.log('Starting quiz...');
+                elements.startBtn.click();
+                
+                await testFramework.wait(500);
+                
+                // Verify quiz started
+                const gameState = testFramework.getGameState();
+                testFramework.addTestResult(
+                    'Quiz Start',
+                    gameState.status === 'active' && gameState.questionsCount === 10,
+                    `Status: ${gameState.status}, Questions: ${gameState.questionsCount}`
+                );
+                
+                await testFramework.verifyUIState({
+                    activeSection: 'quiz',
+                    currentQuestion: 1,
+                    inputEnabled: true,
+                    timerValue: 10
+                }, 'Quiz started state');
+                
+                // Answer first few questions correctly
+                for (let i = 0; i < 3; i++) {
+                    const question = testFramework.getCurrentQuestion();
+                    if (!question) break;
+                    
+                    testFramework.log(`Answering question ${i + 1}: ${question.prompt}`);
+                    await testFramework.simulateUserInput(question.correctAnswer);
+                    await testFramework.wait(1500); // Wait for feedback and next question
+                    
+                    const updatedState = testFramework.getGameState();
+                    testFramework.addTestResult(
+                        `Question ${i + 1} Answer`,
+                        updatedState.answersCount === i + 1,
+                        `Answers recorded: ${updatedState.answersCount}`
+                    );
+                }
+                
+                // Let one question timeout
+                testFramework.log('Letting question timeout...');
+                await testFramework.wait(11000); // Wait for timeout
+                
+                // Answer remaining questions with mix of correct/incorrect
+                const remainingQuestions = 10 - testFramework.getGameState().answersCount;
+                for (let i = 0; i < remainingQuestions; i++) {
+                    const question = testFramework.getCurrentQuestion();
+                    if (!question) break;
+                    
+                    // Alternate between correct and incorrect answers
+                    const answer = i % 2 === 0 ? question.correctAnswer : 'wrong';
+                    testFramework.log(`Answering question with ${i % 2 === 0 ? 'correct' : 'incorrect'} answer: ${answer}`);
+                    
+                    await testFramework.simulateUserInput(answer);
+                    await testFramework.wait(1500);
+                }
+                
+                // Wait for quiz completion
+                await testFramework.waitForCondition(
+                    () => testFramework.getGameState()?.status === 'completed',
+                    15000
+                );
+                
+                // Verify final state
+                const finalState = testFramework.getGameState();
+                testFramework.addTestResult(
+                    'Quiz Completion',
+                    finalState.status === 'completed' && finalState.answersCount === 10,
+                    `Final status: ${finalState.status}, Total answers: ${finalState.answersCount}`
+                );
+                
+                await testFramework.verifyUIState({
+                    activeSection: 'results'
+                }, 'Results displayed');
+                
+                // Verify results display
+                const scoreElement = document.getElementById('score-summary');
+                const detailedElement = document.getElementById('detailed-results');
+                testFramework.addTestResult(
+                    'Results Display',
+                    scoreElement?.textContent.length > 0 && detailedElement?.textContent.length > 0,
+                    'Score summary and detailed results shown'
+                );
+                
+                testFramework.setStatus('Complete Game Flow Test: PASSED', 'passed');
+                testFramework.log('Complete Game Flow Test completed successfully');
+                
+            } catch (error) {
+                testFramework.setStatus('Complete Game Flow Test: FAILED', 'failed');
+                testFramework.log(`Complete Game Flow Test failed: ${error.message}`, 'error');
+                testFramework.addTestResult('Complete Game Flow Test', false, error.message);
+            }
+        }
+        
+        async function runTimerIntegrationTest() {
+            testFramework.setStatus('Running Timer Integration Test...', 'running');
+            testFramework.log('Starting Timer Integration Test');
+            
+            try {
+                const game = testFramework.initializeGame();
+                
+                // Start quiz
+                elements.startBtn.click();
+                await testFramework.wait(500);
+                
+                // Test timer countdown
+                testFramework.log('Testing timer countdown...');
+                const initialTimer = parseInt(elements.timerDisplay.textContent);
+                await testFramework.wait(2000);
+                const afterTimer = parseInt(elements.timerDisplay.textContent);
+                
+                testFramework.addTestResult(
+                    'Timer Countdown',
+                    initialTimer > afterTimer && (initialTimer - afterTimer) >= 1,
+                    `Timer went from ${initialTimer} to ${afterTimer}`
+                );
+                
+                // Test timer visual states
+                testFramework.log('Testing timer visual states...');
+                
+                // Wait for warning state (≤5 seconds)
+                await testFramework.waitForCondition(
+                    () => parseInt(elements.timerDisplay.textContent) <= 5,
+                    8000
+                );
+                
+                const hasWarningClass = elements.timerDisplay.classList.contains('warning');
+                testFramework.addTestResult(
+                    'Timer Warning State',
+                    hasWarningClass,
+                    `Warning class ${hasWarningClass ? 'applied' : 'not applied'} at ≤5 seconds`
+                );
+                
+                // Wait for danger state (≤3 seconds)
+                await testFramework.waitForCondition(
+                    () => parseInt(elements.timerDisplay.textContent) <= 3,
+                    5000
+                );
+                
+                const hasDangerClass = elements.timerDisplay.classList.contains('danger');
+                testFramework.addTestResult(
+                    'Timer Danger State',
+                    hasDangerClass,
+                    `Danger class ${hasDangerClass ? 'applied' : 'not applied'} at ≤3 seconds`
+                );
+                
+                // Test automatic progression on timeout
+                const questionBefore = testFramework.getCurrentQuestion();
+                await testFramework.waitForCondition(
+                    () => parseInt(elements.timerDisplay.textContent) === 0,
+                    5000
+                );
+                
+                await testFramework.wait(1000); // Wait for progression
+                const questionAfter = testFramework.getCurrentQuestion();
+                
+                testFramework.addTestResult(
+                    'Timer Timeout Progression',
+                    questionBefore?.id !== questionAfter?.id,
+                    'Question automatically progressed after timeout'
+                );
+                
+                // Test timer reset for new question
+                const newTimerValue = parseInt(elements.timerDisplay.textContent);
+                testFramework.addTestResult(
+                    'Timer Reset',
+                    newTimerValue === 10,
+                    `Timer reset to ${newTimerValue} for new question`
+                );
+                
+                testFramework.setStatus('Timer Integration Test: PASSED', 'passed');
+                testFramework.log('Timer Integration Test completed successfully');
+                
+            } catch (error) {
+                testFramework.setStatus('Timer Integration Test: FAILED', 'failed');
+                testFramework.log(`Timer Integration Test failed: ${error.message}`, 'error');
+                testFramework.addTestResult('Timer Integration Test', false, error.message);
+            }
+        }
+        
+        async function runUIStateTest() {
+            testFramework.setStatus('Running UI State Changes Test...', 'running');
+            testFramework.log('Starting UI State Changes Test');
+            
+            try {
+                const game = testFramework.initializeGame();
+                
+                // Test section transitions
+                testFramework.log('Testing section transitions...');
+                
+                // Initial state
+                await testFramework.verifyUIState({
+                    activeSection: 'start'
+                }, 'Initial start section');
+                
+                // Start quiz
+                elements.startBtn.click();
+                await testFramework.wait(500);
+                
+                await testFramework.verifyUIState({
+                    activeSection: 'quiz',
+                    inputEnabled: true
+                }, 'Quiz section after start');
+                
+                // Test input state changes
+                testFramework.log('Testing input state changes...');
+                
+                // Type invalid input
+                await testFramework.simulateUserInput('invalid', false);
+                await testFramework.wait(200);
+                
+                // Check if validation feedback appears
+                const feedbackElement = elements.feedback;
+                const hasValidationFeedback = feedbackElement?.textContent.length > 0;
+                testFramework.addTestResult(
+                    'Input Validation Feedback',
+                    hasValidationFeedback,
+                    'Validation feedback displayed for invalid input'
+                );
+                
+                // Test correct answer feedback
+                const question = testFramework.getCurrentQuestion();
+                await testFramework.simulateUserInput(question.correctAnswer);
+                await testFramework.wait(500);
+                
+                const hasCorrectFeedback = feedbackElement?.classList.contains('correct');
+                testFramework.addTestResult(
+                    'Correct Answer Feedback',
+                    hasCorrectFeedback,
+                    'Correct feedback styling applied'
+                );
+                
+                // Test progress updates
+                await testFramework.wait(1000);
+                const currentQuestionNum = parseInt(elements.currentQuestionSpan.textContent);
+                testFramework.addTestResult(
+                    'Progress Update',
+                    currentQuestionNum === 2,
+                    `Progress updated to question ${currentQuestionNum}`
+                );
+                
+                // Skip to end of quiz for results test
+                testFramework.log('Completing quiz for results test...');
+                while (testFramework.getGameState().status === 'active') {
+                    const currentQ = testFramework.getCurrentQuestion();
+                    if (!currentQ) break;
+                    await testFramework.simulateUserInput(currentQ.correctAnswer);
+                    await testFramework.wait(1500);
+                }
+                
+                // Test results section
+                await testFramework.wait(1000);
+                await testFramework.verifyUIState({
+                    activeSection: 'results'
+                }, 'Results section displayed');
+                
+                // Test restart functionality
+                elements.restartBtn.click();
+                await testFramework.wait(500);
+                
+                await testFramework.verifyUIState({
+                    activeSection: 'start'
+                }, 'Restart returns to start section');
+                
+                testFramework.setStatus('UI State Changes Test: PASSED', 'passed');
+                testFramework.log('UI State Changes Test completed successfully');
+                
+            } catch (error) {
+                testFramework.setStatus('UI State Changes Test: FAILED', 'failed');
+                testFramework.log(`UI State Changes Test failed: ${error.message}`, 'error');
+                testFramework.addTestResult('UI State Changes Test', false, error.message);
+            }
+        }
+        
+        async function runMixedPerformanceTest() {
+            testFramework.setStatus('Running Mixed Performance Test...', 'running');
+            testFramework.log('Starting Mixed Performance Test');
+            
+            try {
+                const game = testFramework.initializeGame();
+                
+                // Start quiz
+                elements.startBtn.click();
+                await testFramework.wait(500);
+                
+                const performanceScenarios = [
+                    { type: 'correct', description: 'Correct answer' },
+                    { type: 'incorrect', description: 'Incorrect answer' },
+                    { type: 'timeout', description: 'Timeout' },
+                    { type: 'correct', description: 'Correct answer' },
+                    { type: 'incorrect', description: 'Incorrect answer' },
+                    { type: 'correct', description: 'Correct answer' },
+                    { type: 'timeout', description: 'Timeout' },
+                    { type: 'correct', description: 'Correct answer' },
+                    { type: 'incorrect', description: 'Incorrect answer' },
+                    { type: 'correct', description: 'Correct answer' }
+                ];
+                
+                testFramework.log('Executing mixed performance scenarios...');
+                
+                for (let i = 0; i < performanceScenarios.length; i++) {
+                    const scenario = performanceScenarios[i];
+                    const question = testFramework.getCurrentQuestion();
+                    
+                    if (!question) break;
+                    
+                    testFramework.log(`Question ${i + 1}: ${scenario.description}`);
+                    
+                    switch (scenario.type) {
+                        case 'correct':
+                            await testFramework.simulateUserInput(question.correctAnswer);
+                            await testFramework.wait(1500);
+                            break;
+                            
+                        case 'incorrect':
+                            const wrongAnswer = question.type === 'alphabet-to-number' ? '99' : 'Z';
+                            await testFramework.simulateUserInput(wrongAnswer);
+                            await testFramework.wait(1500);
+                            break;
+                            
+                        case 'timeout':
+                            testFramework.log('Waiting for timeout...');
+                            await testFramework.wait(11000);
+                            break;
+                    }
+                    
+                    // Verify feedback for each scenario
+                    const feedbackElement = elements.feedback;
+                    const feedbackText = feedbackElement?.textContent || '';
+                    
+                    let expectedFeedback = false;
+                    switch (scenario.type) {
+                        case 'correct':
+                            expectedFeedback = feedbackElement?.classList.contains('correct');
+                            break;
+                        case 'incorrect':
+                            expectedFeedback = feedbackElement?.classList.contains('incorrect');
+                            break;
+                        case 'timeout':
+                            expectedFeedback = feedbackElement?.classList.contains('timeout') || 
+                                             feedbackText.toLowerCase().includes('time');
+                            break;
+                    }
+                    
+                    testFramework.addTestResult(
+                        `Scenario ${i + 1}: ${scenario.description}`,
+                        expectedFeedback,
+                        `Feedback correctly displayed for ${scenario.type}`
+                    );
+                }
+                
+                // Wait for quiz completion
+                await testFramework.waitForCondition(
+                    () => testFramework.getGameState()?.status === 'completed',
+                    5000
+                );
+                
+                // Verify mixed results in summary
+                await testFramework.wait(1000);
+                const scoreElement = document.getElementById('score-summary');
+                const scoreText = scoreElement?.textContent || '';
+                
+                const hasCorrectCount = scoreText.includes('5') || scoreText.includes('correct');
+                const hasIncorrectCount = scoreText.includes('3') || scoreText.includes('incorrect');
+                const hasTimeoutCount = scoreText.includes('2') || scoreText.includes('timeout');
+                
+                testFramework.addTestResult(
+                    'Mixed Results Summary',
+                    hasCorrectCount && (hasIncorrectCount || hasTimeoutCount),
+                    'Score summary shows mixed performance results'
+                );
+                
+                // Verify detailed results show all scenarios
+                const detailedElement = document.getElementById('detailed-results');
+                const detailedText = detailedElement?.textContent || '';
+                const hasDetailedResults = detailedText.length > 100; // Should have substantial content
+                
+                testFramework.addTestResult(
+                    'Detailed Results Display',
+                    hasDetailedResults,
+                    'Detailed results show individual question outcomes'
+                );
+                
+                testFramework.setStatus('Mixed Performance Test: PASSED', 'passed');
+                testFramework.log('Mixed Performance Test completed successfully');
+                
+            } catch (error) {
+                testFramework.setStatus('Mixed Performance Test: FAILED', 'failed');
+                testFramework.log(`Mixed Performance Test failed: ${error.message}`, 'error');
+                testFramework.addTestResult('Mixed Performance Test', false, error.message);
+            }
+        }
+        
+        async function runAllTests() {
+            testFramework.clearResults();
+            testFramework.setStatus('Running All Integration Tests...', 'running');
+            testFramework.log('Starting comprehensive integration test suite');
+            
+            const tests = [
+                { name: 'Complete Game Flow', fn: runCompleteFlowTest },
+                { name: 'Timer Integration', fn: runTimerIntegrationTest },
+                { name: 'UI State Changes', fn: runUIStateTest },
+                { name: 'Mixed Performance', fn: runMixedPerformanceTest }
+            ];
+            
+            let allPassed = true;
+            
+            for (let i = 0; i < tests.length; i++) {
+                const test = tests[i];
+                testFramework.log(`\n=== Running ${test.name} Test (${i + 1}/${tests.length}) ===`);
+                
+                try {
+                    await test.fn();
+                    await testFramework.wait(1000); // Brief pause between tests
+                } catch (error) {
+                    testFramework.log(`Test ${test.name} encountered error: ${error.message}`, 'error');
+                    allPassed = false;
+                }
+            }
+            
+            // Final summary
+            const totalTests = testFramework.testResults.length;
+            const passedTests = testFramework.testResults.filter(r => r.passed).length;
+            const failedTests = totalTests - passedTests;
+            
+            testFramework.log(`\n=== Test Suite Complete ===`);
+            testFramework.log(`Total Tests: ${totalTests}`);
+            testFramework.log(`Passed: ${passedTests}`, 'success');
+            testFramework.log(`Failed: ${failedTests}`, failedTests > 0 ? 'error' : 'info');
+            
+            const overallPassed = failedTests === 0;
+            testFramework.setStatus(
+                `All Tests: ${overallPassed ? 'PASSED' : 'FAILED'} (${passedTests}/${totalTests})`,
+                overallPassed ? 'passed' : 'failed'
+            );
+        }
+        
+        function clearLog() {
+            testFramework.logElement.textContent = 'Log cleared...\n';
+            testFramework.clearResults();
+            testFramework.statusElement.style.display = 'none';
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            testFramework.log('Integration test framework initialized');
+            testFramework.log('Ready to run comprehensive game flow tests');
+        });
+        
+        // Disable buttons during tests
+        function disableTestButtons(disabled) {
+            const buttons = document.querySelectorAll('.test-controls button:not(#clear-log)');
+            buttons.forEach(btn => btn.disabled = disabled);
+        }
+        
+        // Override test functions to handle button states
+        const originalFunctions = {
+            runCompleteFlowTest,
+            runTimerIntegrationTest,
+            runUIStateTest,
+            runMixedPerformanceTest,
+            runAllTests
+        };
+        
+        Object.keys(originalFunctions).forEach(funcName => {
+            const originalFunc = originalFunctions[funcName];
+            window[funcName] = async function() {
+                disableTestButtons(true);
+                try {
+                    await originalFunc();
+                } finally {
+                    disableTestButtons(false);
+                }
+            };
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Styling Test - Alphabet Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Test styles to demonstrate different states */
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Responsive Styling Test</h1>
+            <div class="progress">
+                <span>5</span> of <span>10</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Test Timer States -->
+            <div class="test-section">
+                <div class="test-title">Timer States Test</div>
+                
+                <div class="quiz-section" style="margin-bottom: 2rem;">
+                    <div class="timer-container">
+                        <div class="timer">8</div>
+                        <div class="timer-label">seconds (normal)</div>
+                    </div>
+                </div>
+
+                <div class="quiz-section" style="margin-bottom: 2rem;">
+                    <div class="timer-container warning-state">
+                        <div class="timer warning">4</div>
+                        <div class="timer-label">seconds (warning)</div>
+                    </div>
+                </div>
+
+                <div class="quiz-section">
+                    <div class="timer-container urgent">
+                        <div class="timer danger">2</div>
+                        <div class="timer-label">seconds (urgent)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Question Display -->
+            <div class="test-section">
+                <div class="test-title">Question Display Test</div>
+                <div class="quiz-section">
+                    <div class="question-container">
+                        <h2 class="question">What number is the letter M?</h2>
+                        <div class="input-container">
+                            <input 
+                                type="text" 
+                                class="answer-input" 
+                                placeholder="Type your answer..."
+                                value="13"
+                            >
+                            <button class="submit-btn ready">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Feedback Messages -->
+            <div class="test-section">
+                <div class="test-title">Feedback Messages Test</div>
+                
+                <div class="quiz-section" style="margin-bottom: 1rem;">
+                    <div class="feedback correct">✓ Correct! Great job!</div>
+                </div>
+
+                <div class="quiz-section" style="margin-bottom: 1rem;">
+                    <div class="feedback incorrect">✗ Incorrect. The correct answer is 13.</div>
+                </div>
+
+                <div class="quiz-section">
+                    <div class="feedback timeout">⏰ Time's up! The correct answer is 13.</div>
+                </div>
+            </div>
+
+            <!-- Test Results Summary -->
+            <div class="test-section">
+                <div class="test-title">Results Summary Test</div>
+                <div class="results-section" style="display: block;">
+                    <h2>Quiz Complete!</h2>
+                    <div class="score-summary">
+                        <div class="score-main">
+                            <div class="score-percentage">80%</div>
+                            <div class="score-fraction">8 out of 10 correct</div>
+                            <div class="performance-level great">Great Job!</div>
+                        </div>
+                        
+                        <div class="score-breakdown">
+                            <div class="score-item correct">
+                                <span class="score-label">Correct</span>
+                                <span class="score-value">8</span>
+                            </div>
+                            <div class="score-item incorrect">
+                                <span class="score-label">Incorrect</span>
+                                <span class="score-value">1</span>
+                            </div>
+                            <div class="score-item timeout">
+                                <span class="score-label">Timeout</span>
+                                <span class="score-value">1</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detailed-results">
+                        <h3>Question Review</h3>
+                        
+                        <div class="result-item correct">
+                            <div class="result-header">
+                                <span class="result-number">Question 1</span>
+                                <span class="result-status">✓</span>
+                                <span class="result-time">7.2s</span>
+                            </div>
+                            <div class="result-question">What number is the letter A?</div>
+                            <div class="result-answers">
+                                <div class="result-correct">Correct answer: 1</div>
+                                <div class="result-user">Your answer: 1</div>
+                            </div>
+                        </div>
+
+                        <div class="result-item incorrect">
+                            <div class="result-header">
+                                <span class="result-number">Question 2</span>
+                                <span class="result-status">✗</span>
+                                <span class="result-time">5.8s</span>
+                            </div>
+                            <div class="result-question">What letter is number 13?</div>
+                            <div class="result-answers">
+                                <div class="result-correct">Correct answer: M</div>
+                                <div class="result-user">Your answer: N</div>
+                            </div>
+                        </div>
+
+                        <div class="result-item timeout">
+                            <div class="result-header">
+                                <span class="result-number">Question 3</span>
+                                <span class="result-status">⏰</span>
+                                <span class="result-time">10.0s</span>
+                            </div>
+                            <div class="result-question">What number is the letter Z?</div>
+                            <div class="result-answers">
+                                <div class="result-correct">Correct answer: 26</div>
+                                <div class="result-user">No answer (timed out)</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="restart-btn">Play Again</button>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Responsive design test for mobile, tablet, and desktop viewports</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple script to test responsive behavior
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            console.log(`Viewport: ${width}x${height}`);
+            
+            if (width <= 480) {
+                console.log('Mobile view (≤480px)');
+            } else if (width <= 768) {
+                console.log('Tablet view (≤768px)');
+            } else if (width >= 1200) {
+                console.log('Large desktop view (≥1200px)');
+            } else {
+                console.log('Desktop view');
+            }
+        }
+
+        window.addEventListener('resize', updateViewportInfo);
+        updateViewportInfo();
+    </script>
+</body>
+</html>

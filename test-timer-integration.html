@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .timer {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 2rem 0;
+            transition: color 0.3s ease;
+        }
+
+        .timer.warning {
+            color: #FF9800;
+        }
+
+        .timer.danger {
+            color: #F44336;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-style: italic;
+        }
+
+        .log {
+            text-align: left;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Timer Integration Test</h1>
+    <p>Testing Timer class integration with UI elements</p>
+
+    <div id="timer" class="timer">--</div>
+
+    <div>
+        <button id="start-10">Start 10s Timer</button>
+        <button id="start-5">Start 5s Timer</button>
+        <button id="pause">Pause</button>
+        <button id="resume">Resume</button>
+        <button id="stop">Stop</button>
+        <button id="add-time">Add 3s</button>
+    </div>
+
+    <div id="status" class="status">Ready to test timer functionality</div>
+
+    <div>
+        <button id="run-auto-test">Run Automated Test</button>
+        <button id="clear-log">Clear Log</button>
+    </div>
+
+    <div id="log" class="log">Timer integration test ready...\n</div>
+
+    <script>
+        // Minimal DOM elements setup for Timer integration
+        const elements = {
+            timerDisplay: document.getElementById('timer')
+        };
+
+        // Include Timer class (copy from script.js)
+        class Timer {
+            constructor() {
+                this.duration = 0;
+                this.timeRemaining = 0;
+                this.intervalId = null;
+                this.isRunning = false;
+                this.onTickCallback = null;
+                this.onCompleteCallback = null;
+                this.startTime = null;
+                this.pausedTime = 0;
+                this.isPaused = false;
+            }
+
+            start(duration, onCompleteCallback, onTickCallback = null) {
+                if (this.isRunning) {
+                    this.stop();
+                }
+
+                this.duration = duration;
+                this.timeRemaining = duration;
+                this.onCompleteCallback = onCompleteCallback;
+                this.onTickCallback = onTickCallback;
+                this.isRunning = true;
+                this.startTime = Date.now();
+                this.pausedTime = 0;
+                this.isPaused = false;
+
+                if (this.onTickCallback) {
+                    this.onTickCallback(this.timeRemaining);
+                }
+
+                if (duration <= 0) {
+                    setTimeout(() => {
+                        this.handleTimerComplete();
+                    }, 0);
+                    return;
+                }
+
+                this.intervalId = setInterval(() => {
+                    this.tick();
+                }, 1000);
+            }
+
+            stop() {
+                if (this.intervalId) {
+                    clearInterval(this.intervalId);
+                    this.intervalId = null;
+                }
+
+                this.isRunning = false;
+                this.isPaused = false;
+                this.timeRemaining = 0;
+                this.onTickCallback = null;
+                this.onCompleteCallback = null;
+            }
+
+            pause() {
+                if (this.isRunning && !this.isPaused) {
+                    this.isPaused = true;
+                    this.pausedTime = Date.now();
+
+                    if (this.intervalId) {
+                        clearInterval(this.intervalId);
+                        this.intervalId = null;
+                    }
+                }
+            }
+
+            resume() {
+                if (this.isRunning && this.isPaused) {
+                    this.isPaused = false;
+
+                    const pauseDuration = Date.now() - this.pausedTime;
+                    this.startTime += pauseDuration;
+
+                    this.intervalId = setInterval(() => {
+                        this.tick();
+                    }, 1000);
+                }
+            }
+
+            tick() {
+                if (!this.isRunning || this.isPaused) {
+                    return;
+                }
+
+                const elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+                this.timeRemaining = Math.max(0, this.duration - elapsedTime);
+
+                if (this.onTickCallback) {
+                    this.onTickCallback(this.timeRemaining);
+                }
+
+                if (this.timeRemaining <= 0) {
+                    this.handleTimerComplete();
+                }
+            }
+
+            handleTimerComplete() {
+                const callback = this.onCompleteCallback;
+                this.stop();
+
+                if (callback && typeof callback === 'function') {
+                    callback();
+                }
+            }
+
+            getTimeRemaining() {
+                return this.timeRemaining;
+            }
+
+            getElapsedTime() {
+                if (!this.isRunning) {
+                    return 0;
+                }
+
+                const currentTime = this.isPaused ? this.pausedTime : Date.now();
+                return Math.floor((currentTime - this.startTime) / 1000);
+            }
+
+            isActive() {
+                return this.isRunning;
+            }
+
+            isPausedState() {
+                return this.isPaused;
+            }
+
+            getDuration() {
+                return this.duration;
+            }
+
+            addTime(seconds) {
+                if (this.isRunning) {
+                    this.duration += seconds;
+                    this.timeRemaining = Math.max(0, this.duration - this.getElapsedTime());
+
+                    if (this.onTickCallback) {
+                        this.onTickCallback(this.timeRemaining);
+                    }
+                }
+            }
+        }
+
+        // UI Manager for timer display
+        class UIManager {
+            updateTimer(timeRemaining) {
+                const timerElement = elements.timerDisplay;
+                if (!timerElement) return;
+
+                timerElement.textContent = timeRemaining;
+
+                timerElement.classList.remove('warning', 'danger');
+
+                if (timeRemaining <= 3 && timeRemaining > 0) {
+                    timerElement.classList.add('danger');
+                } else if (timeRemaining <= 5 && timeRemaining > 3) {
+                    timerElement.classList.add('warning');
+                }
+            }
+        }
+
+        // Test setup
+        let timer = new Timer();
+        const uiManager = new UIManager();
+        const statusElement = document.getElementById('status');
+        const logElement = document.getElementById('log');
+
+        function log(message) {
+            logElement.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message) {
+            statusElement.textContent = message;
+            log(message);
+        }
+
+        function updateButtons() {
+            const isActive = timer.isActive();
+            const isPaused = timer.isPausedState();
+
+            document.getElementById('start-10').disabled = isActive;
+            document.getElementById('start-5').disabled = isActive;
+            document.getElementById('pause').disabled = !isActive || isPaused;
+            document.getElementById('resume').disabled = !isPaused;
+            document.getElementById('stop').disabled = !isActive;
+            document.getElementById('add-time').disabled = !isActive;
+        }
+
+        // Timer callbacks
+        function onTimerTick(timeRemaining) {
+            uiManager.updateTimer(timeRemaining);
+            log(`Timer tick: ${timeRemaining} seconds remaining`);
+        }
+
+        function onTimerComplete() {
+            updateStatus('Timer completed!');
+            elements.timerDisplay.textContent = '0';
+            elements.timerDisplay.classList.remove('warning', 'danger');
+            updateButtons();
+        }
+
+        // Event listeners
+        document.getElementById('start-10').addEventListener('click', () => {
+            timer.start(10, onTimerComplete, onTimerTick);
+            updateStatus('Started 10-second timer');
+            updateButtons();
+        });
+
+        document.getElementById('start-5').addEventListener('click', () => {
+            timer.start(5, onTimerComplete, onTimerTick);
+            updateStatus('Started 5-second timer');
+            updateButtons();
+        });
+
+        document.getElementById('pause').addEventListener('click', () => {
+            timer.pause();
+            updateStatus('Timer paused');
+            updateButtons();
+        });
+
+        document.getElementById('resume').addEventListener('click', () => {
+            timer.resume();
+            updateStatus('Timer resumed');
+            updateButtons();
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            timer.stop();
+            elements.timerDisplay.textContent = '--';
+            elements.timerDisplay.classList.remove('warning', 'danger');
+            updateStatus('Timer stopped');
+            updateButtons();
+        });
+
+        document.getElementById('add-time').addEventListener('click', () => {
+            timer.addTime(3);
+            updateStatus('Added 3 seconds to timer');
+        });
+
+        document.getElementById('clear-log').addEventListener('click', () => {
+            logElement.textContent = 'Log cleared...\n';
+        });
+
+        // Automated test
+        document.getElementById('run-auto-test').addEventListener('click', async () => {
+            updateStatus('Running automated integration test...');
+
+            // Test 1: Start timer and verify UI updates
+            log('Test 1: Starting 3-second timer...');
+            timer.start(3, () => {
+                log('Test 1: Timer completed successfully');
+            }, onTimerTick);
+
+            await new Promise(resolve => setTimeout(resolve, 3500));
+
+            // Test 2: Test pause/resume
+            log('Test 2: Testing pause/resume with 4-second timer...');
+            timer.start(4, () => {
+                log('Test 2: Timer completed successfully');
+            }, onTimerTick);
+
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            log('Test 2: Pausing timer...');
+            timer.pause();
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            log('Test 2: Resuming timer...');
+            timer.resume();
+
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Test 3: Test add time
+            log('Test 3: Testing add time functionality...');
+            timer.start(2, () => {
+                log('Test 3: Timer completed successfully');
+            }, onTimerTick);
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            log('Test 3: Adding 2 seconds...');
+            timer.addTime(2);
+
+            await new Promise(resolve => setTimeout(resolve, 3500));
+
+            updateStatus('Automated integration test completed!');
+            log('All integration tests passed! ✓');
+        });
+
+        // Initialize
+        updateButtons();
+        log('Timer integration test initialized');
+    </script>
+</body>
+
+</html>

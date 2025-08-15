@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Validation Test - Alphabet ↔ Number Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .test-section h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .test-input {
+            margin-bottom: 1rem;
+        }
+        
+        .test-results {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .test-log {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Input Validation Test</h1>
+            <p>Testing real-time input validation and sanitization</p>
+        </header>
+
+        <div class="test-container">
+            <div class="test-section">
+                <h3>Number Input Test (Alphabet to Number Question)</h3>
+                <p>Expected: Numbers 1-26 only</p>
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="number-input" 
+                        class="answer-input" 
+                        placeholder="Enter number (1-26)"
+                        autocomplete="off"
+                    >
+                    <button id="number-submit" class="submit-btn" disabled>Submit</button>
+                </div>
+                <div class="test-results">
+                    <div class="test-log" id="number-log">Test log will appear here...</div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>Letter Input Test (Number to Alphabet Question)</h3>
+                <p>Expected: Letters A-Z only (case insensitive)</p>
+                <div class="input-container">
+                    <input 
+                        type="text" 
+                        id="letter-input" 
+                        class="answer-input" 
+                        placeholder="Enter letter (A-Z)"
+                        autocomplete="off"
+                    >
+                    <button id="letter-submit" class="submit-btn" disabled>Submit</button>
+                </div>
+                <div class="test-results">
+                    <div class="test-log" id="letter-log">Test log will appear here...</div>
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>Test Instructions</h3>
+                <ul>
+                    <li>Try typing invalid characters (letters in number field, numbers in letter field)</li>
+                    <li>Try typing valid characters and see real-time validation</li>
+                    <li>Try submitting empty fields</li>
+                    <li>Try submitting out-of-range numbers (0, 27, etc.)</li>
+                    <li>Try multiple letters in the letter field</li>
+                    <li>Test Enter key submission</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Mock game state for testing
+        window.gameState = {
+            status: 'active',
+            currentQuestionIndex: 0,
+            questions: [
+                {
+                    id: 'test-1',
+                    type: 'alphabet-to-number',
+                    prompt: 'What number is the letter M?',
+                    correctAnswer: '13',
+                    displayValue: 'M'
+                },
+                {
+                    id: 'test-2',
+                    type: 'number-to-alphabet',
+                    prompt: 'What letter is number 13?',
+                    correctAnswer: 'M',
+                    displayValue: '13'
+                }
+            ]
+        };
+
+        // Test setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const numberInput = document.getElementById('number-input');
+            const letterInput = document.getElementById('letter-input');
+            const numberSubmit = document.getElementById('number-submit');
+            const letterSubmit = document.getElementById('letter-submit');
+            const numberLog = document.getElementById('number-log');
+            const letterLog = document.getElementById('letter-log');
+
+            // Mock elements for the validation functions
+            window.elements = {
+                answerInput: null,
+                submitBtn: null
+            };
+
+            function logEvent(logElement, message) {
+                const timestamp = new Date().toLocaleTimeString();
+                logElement.textContent += `[${timestamp}] ${message}\n`;
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+
+            function setupInputTest(input, submit, logElement, questionType) {
+                // Mock current question for this input
+                const mockQuestion = questionType === 'number' ? 
+                    window.gameState.questions[0] : window.gameState.questions[1];
+
+                // Override getCurrentQuestion for this test
+                const originalGetCurrentQuestion = window.getCurrentQuestion;
+                window.getCurrentQuestion = () => mockQuestion;
+
+                // Set up event listeners
+                input.addEventListener('keydown', function(e) {
+                    // Temporarily set elements for validation
+                    window.elements.answerInput = input;
+                    window.elements.submitBtn = submit;
+                    
+                    logEvent(logElement, `Keydown: "${e.key}"`);
+                    
+                    if (typeof handleInputKeydown === 'function') {
+                        handleInputKeydown(e);
+                    }
+                });
+
+                input.addEventListener('input', function(e) {
+                    // Temporarily set elements for validation
+                    window.elements.answerInput = input;
+                    window.elements.submitBtn = submit;
+                    
+                    logEvent(logElement, `Input changed: "${e.target.value}"`);
+                    
+                    if (typeof handleInputChange === 'function') {
+                        handleInputChange(e);
+                    }
+                });
+
+                input.addEventListener('focus', function(e) {
+                    logEvent(logElement, 'Input focused');
+                    if (typeof handleInputFocus === 'function') {
+                        handleInputFocus(e);
+                    }
+                });
+
+                input.addEventListener('blur', function(e) {
+                    logEvent(logElement, 'Input blurred');
+                    if (typeof handleInputBlur === 'function') {
+                        handleInputBlur(e);
+                    }
+                });
+
+                submit.addEventListener('click', function() {
+                    // Temporarily set elements for validation
+                    window.elements.answerInput = input;
+                    window.elements.submitBtn = submit;
+                    
+                    logEvent(logElement, `Submit clicked with value: "${input.value}"`);
+                    
+                    if (typeof handleSubmitAnswer === 'function') {
+                        // Mock the quiz game submit
+                        const originalQuizGame = window.quizGame;
+                        window.quizGame = {
+                            submitAnswer: function(answer) {
+                                logEvent(logElement, `Answer submitted to game: "${answer}"`);
+                            }
+                        };
+                        
+                        handleSubmitAnswer();
+                        
+                        // Restore original
+                        window.quizGame = originalQuizGame;
+                    }
+                });
+
+                logElement.textContent = `Test initialized for ${questionType} input\n`;
+            }
+
+            // Set up tests
+            setupInputTest(numberInput, numberSubmit, numberLog, 'number');
+            setupInputTest(letterInput, letterSubmit, letterLog, 'letter');
+        });
+    </script>
+</body>
+</html>
